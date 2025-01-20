@@ -2,8 +2,9 @@ import { useState } from "react";
 import { NetworkNode } from "@/utils/networkGraphUtils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, Tag } from "lucide-react";
+import { ChevronDown, ChevronUp, Tag, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface SearchResultProps {
   node: NetworkNode;
@@ -13,6 +14,8 @@ interface SearchResultProps {
 
 export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const navigate = useNavigate();
+  
   console.log('SearchResult render:', { node, isExpanded, relatedNodesCount: relatedNodes.length });
 
   const handleToggle = () => {
@@ -23,6 +26,12 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
   const handleSelect = (selectedNode: NetworkNode) => {
     console.log('Node selected:', selectedNode);
     onSelect(selectedNode);
+  };
+
+  const handleViewNote = (noteId: string) => {
+    // Extract the ID from the node.id which is in format "note-{id}"
+    const id = noteId.replace('note-', '');
+    navigate(`/note/${id}`);
   };
 
   const relatedTags = relatedNodes.filter(n => n.type === 'tag');
@@ -46,6 +55,16 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
         >
           {node.name}
         </Button>
+        {node.type === 'note' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleViewNote(node.id)}
+            className="h-8 w-8 p-0 shrink-0"
+          >
+            <ExternalLink className="h-4 w-4" />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"
@@ -91,15 +110,24 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
             </div>
             <div className="space-y-0.5">
               {relatedNotes.map((note) => (
-                <Button
-                  key={note.id}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start text-xs font-normal h-7 truncate"
-                  onClick={() => handleSelect(note)}
-                >
-                  {note.name}
-                </Button>
+                <div key={note.id} className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-1 justify-start text-xs font-normal h-7 truncate"
+                    onClick={() => handleSelect(note)}
+                  >
+                    {note.name}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleViewNote(note.id)}
+                    className="h-7 w-7 p-0 shrink-0"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                </div>
               ))}
             </div>
           </div>
