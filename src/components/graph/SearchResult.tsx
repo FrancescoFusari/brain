@@ -15,8 +15,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
   const [isExpanded, setIsExpanded] = useState(false);
   console.log('SearchResult render:', { node, isExpanded, relatedNodesCount: relatedNodes.length });
 
-  const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event from bubbling up
+  const handleToggle = () => {
     setIsExpanded(!isExpanded);
     console.log('Toggle expanded state:', !isExpanded);
   };
@@ -34,16 +33,16 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
   return (
     <div 
       className={cn(
-        "bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200",
+        "bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200 max-w-full overflow-hidden",
         isExpanded ? "p-3" : "p-2"
       )}
     >
-      <div className="flex items-center justify-between gap-1">
+      <div className="flex items-center justify-between gap-1 w-full">
         <Button
           variant="ghost"
           size="sm"
           className="flex-1 justify-start font-medium truncate text-sm h-8"
-          onClick={() => handleSelect(node)}
+          onClick={handleToggle}
         >
           {node.name}
         </Button>
@@ -51,7 +50,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
           variant="ghost"
           size="sm"
           onClick={handleToggle}
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 shrink-0"
         >
           {isExpanded ? (
             <ChevronUp className="h-4 w-4" />
@@ -62,7 +61,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
       </div>
 
       {(isExpanded || relatedTags.length > 0) && (
-        <div className={cn("space-y-3", !isExpanded && "mt-2")}>
+        <div className={cn("space-y-3 w-full", !isExpanded && "mt-2")}>
           {relatedTags.length > 0 && (
             <div className="space-y-1.5">
               <div className="flex items-center text-xs text-muted-foreground">
@@ -95,7 +94,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
                     key={note.id}
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-xs font-normal h-7"
+                    className="w-full justify-start text-xs font-normal h-7 truncate"
                     onClick={() => handleSelect(note)}
                   >
                     {note.name}
