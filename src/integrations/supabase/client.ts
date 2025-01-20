@@ -16,6 +16,7 @@ export const supabase = createClient<Database>(
     },
     global: {
       headers: {
+        'apikey': SUPABASE_ANON_KEY,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
