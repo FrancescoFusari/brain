@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
@@ -60,47 +60,25 @@ const QueuePage = () => {
   const [selectedSender, setSelectedSender] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-
-  // Check authentication status
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) throw error;
-      return session;
-    },
-  });
-
-  // Fetch queue items with error handling
-  const { data: queueItems, isLoading, error } = useQuery({
+  
+  const { data: queueItems, isLoading } = useQuery({
     queryKey: ["queue-items"],
     queryFn: async () => {
       console.log("Fetching queue items...");
-      try {
-        if (!session?.user) {
-          throw new Error("Not authenticated");
-        }
+      const { data, error } = await supabase
+        .from("email_processing_queue")
+        .select("*")
+        .order("received_at", { ascending: false });
 
-        const { data, error } = await supabase
-          .from("email_processing_queue")
-          .select("*")
-          .order("received_at", { ascending: false });
-
-        if (error) {
-          console.error("Error fetching queue items:", error);
-          throw error;
-        }
-
-        console.log("Queue items fetched:", data);
-        return data as QueueItem[];
-      } catch (err) {
-        console.error("Error in queue items query:", err);
-        throw err;
+      if (error) {
+        console.error("Error fetching queue items:", error);
+        throw error;
       }
+
+      console.log("Queue items fetched:", data);
+      return data as QueueItem[];
     },
-    enabled: !!session?.user,
-    retry: 2,
-    retryDelay: 1000,
+    refetchInterval: 5000,
   });
 
   const processEmailMutation = useMutation({
@@ -170,39 +148,10 @@ const QueuePage = () => {
     return filtered;
   }, [queueItems, searchQuery, selectedSender]);
 
-  // Handle loading state
   if (isLoading) {
     return (
       <div className="container mx-auto p-4 flex items-center justify-center min-h-[200px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  // Handle error state
-  if (error) {
-    return (
-      <div className="container mx-auto p-4 mt-8">
-        <div className="text-center space-y-4">
-          <p className="text-destructive">Error loading queue items</p>
-          <Button 
-            variant="outline" 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["queue-items"] })}
-          >
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Handle authentication state
-  if (!session?.user) {
-    return (
-      <div className="container mx-auto p-4 mt-8">
-        <div className="text-center text-muted-foreground">
-          Please log in to view the queue
-        </div>
       </div>
     );
   }
