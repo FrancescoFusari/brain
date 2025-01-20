@@ -2,7 +2,16 @@ import { useState } from "react";
 import { NetworkNode } from "@/utils/networkGraphUtils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, Tag, ExternalLink } from "lucide-react";
+import { 
+  ChevronDown, 
+  ChevronUp, 
+  Tag, 
+  ExternalLink,
+  FileText,
+  MessageCircle,
+  Link2,
+  ArrowRight
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
@@ -29,7 +38,6 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
   };
 
   const handleViewNote = (noteId: string) => {
-    // Extract the ID from the node.id which is in format "note-{id}"
     const id = noteId.replace('note-', '');
     navigate(`/note/${id}`);
   };
@@ -38,6 +46,17 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
   const relatedNotes = relatedNodes.filter(n => n.type === 'note');
 
   console.log('Related nodes:', { tags: relatedTags.length, notes: relatedNotes.length });
+
+  const getNodeIcon = (nodeType: string) => {
+    switch (nodeType) {
+      case 'tag':
+        return <Tag className="h-4 w-4" />;
+      case 'note':
+        return <FileText className="h-4 w-4" />;
+      default:
+        return <MessageCircle className="h-4 w-4" />;
+    }
+  };
 
   return (
     <div 
@@ -50,9 +69,10 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
         <Button
           variant="ghost"
           size="sm"
-          className="flex-1 justify-start font-medium truncate text-sm h-8"
+          className="flex-1 justify-start font-medium truncate text-sm h-8 gap-2"
           onClick={handleToggle}
         >
+          {getNodeIcon(node.type)}
           {node.name}
         </Button>
         {node.type === 'note' && (
@@ -91,9 +111,10 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
                 <Badge
                   key={tag.id}
                   variant="secondary"
-                  className="cursor-pointer text-xs py-0 h-5"
+                  className="cursor-pointer text-xs py-0 h-5 flex items-center gap-1"
                   onClick={() => handleSelect(tag)}
                 >
+                  <Tag className="h-3 w-3" />
                   {tag.name}
                 </Badge>
               ))
@@ -103,32 +124,38 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
           </div>
         </div>
 
-        {isExpanded && relatedNotes.length > 0 && (
+        {isExpanded && (
           <div className="space-y-1.5">
-            <div className="text-xs text-muted-foreground">
-              Notes with Common Tags
+            <div className="flex items-center text-xs text-muted-foreground">
+              <Link2 className="h-3 w-3 mr-1.5" />
+              Connected Notes
             </div>
             <div className="space-y-0.5">
-              {relatedNotes.map((note) => (
-                <div key={note.id} className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-1 justify-start text-xs font-normal h-7 truncate"
-                    onClick={() => handleSelect(note)}
-                  >
-                    {note.name}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleViewNote(note.id)}
-                    className="h-7 w-7 p-0 shrink-0"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
+              {relatedNotes.length > 0 ? (
+                relatedNotes.map((note) => (
+                  <div key={note.id} className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1 justify-start text-xs font-normal h-7 truncate gap-2"
+                      onClick={() => handleSelect(note)}
+                    >
+                      <ArrowRight className="h-3 w-3" />
+                      {note.name}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewNote(note.id)}
+                      className="h-7 w-7 p-0 shrink-0"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <span className="text-xs text-muted-foreground">No notes connected</span>
+              )}
             </div>
           </div>
         )}
