@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useMemo, forwardRef } from 'react';
-import ForceGraph3D, { ForceGraphMethods } from 'react-force-graph-3d';
+import ForceGraph3D from 'react-force-graph-3d';
 import { NetworkNode, NetworkLink, processNetworkData } from '@/utils/networkGraphUtils';
 import { Note } from '@/types/graph';
 import * as d3 from 'd3';
@@ -9,6 +9,15 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Network3DGraphProps {
   notes: Note[];
+}
+
+export interface ForceGraphMethods {
+  // Add required methods
+  pauseAnimation: () => void;
+  resumeAnimation: () => void;
+  cameraPosition: (position: { x: number; y: number; z: number }, lookAt?: { x: number; y: number; z: number }, transitionMs?: number) => void;
+  d3Force: (forceName: string, force?: any) => any;
+  // Add other methods as needed
 }
 
 export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>(
@@ -58,10 +67,12 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
 
     // Handle ref assignment
     useEffect(() => {
-      if (ref && typeof ref === 'function') {
-        ref(localRef.current || null);
-      } else if (ref && localRef.current) {
-        (ref as React.MutableRefObject<ForceGraphMethods | null>).current = localRef.current;
+      if (ref) {
+        if (typeof ref === 'function') {
+          ref(localRef.current || null);
+        } else {
+          ref.current = localRef.current || null;
+        }
       }
     }, [ref]);
 
@@ -87,7 +98,7 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
         sprite.backgroundColor = 'rgba(0,0,0,0.5)';
         sprite.padding = isMobile ? 0.5 : 1;
         sprite.borderRadius = 2;
-        sprite.position.set(4, 0, 0); // Use position.set instead of translateX
+        (sprite as unknown as THREE.Object3D).position.set(4, 0, 0);
         
         group.add(sprite);
         
@@ -111,7 +122,7 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
         sprite.backgroundColor = 'rgba(0,0,0,0.3)';
         sprite.padding = isMobile ? 0.3 : 0.5;
         sprite.borderRadius = 1;
-        sprite.position.set(3, 0, 0); // Use position.set instead of translateX
+        (sprite as unknown as THREE.Object3D).position.set(3, 0, 0);
         
         group.add(sprite);
         
@@ -130,7 +141,7 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
     return (
       <div className="w-full h-full">
         <ForceGraph3D
-          ref={localRef}
+          ref={localRef as any}
           graphData={{ nodes, links }}
           nodeLabel={(node: NetworkNode) => node.name}
           nodeThreeObject={createNodeObject}

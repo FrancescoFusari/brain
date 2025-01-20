@@ -37,14 +37,14 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
           variant="ghost"
           size="sm"
           className="flex-1 justify-start font-medium truncate text-sm h-8"
-          onClick={handleSelect}
+          onClick={handleToggle}
         >
           {node.name}
         </Button>
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleToggle}
+          onClick={handleSelect}
           className="h-8 w-8 p-0"
         >
           {isExpanded ? (
@@ -55,51 +55,49 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
         </Button>
       </div>
 
-      {isExpanded && (
-        <div className="mt-3 space-y-3">
-          {relatedTags.length > 0 && (
-            <div className="space-y-1.5">
-              <div className="flex items-center text-xs text-muted-foreground">
-                <Tag className="h-3 w-3 mr-1.5" />
-                Connected Tags
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {relatedTags.map((tag) => (
-                  <Badge
-                    key={tag.id}
-                    variant="secondary"
-                    className="cursor-pointer text-xs py-0 h-5"
-                    onClick={() => onSelect(tag)}
-                  >
-                    {tag.name}
-                  </Badge>
-                ))}
-              </div>
+      <div className={cn("space-y-3", !isExpanded && "mt-2")}>
+        {relatedTags.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="flex items-center text-xs text-muted-foreground">
+              <Tag className="h-3 w-3 mr-1.5" />
+              {isExpanded ? 'Connected Tags' : 'Tags'}
             </div>
-          )}
+            <div className="flex flex-wrap gap-1.5">
+              {relatedTags.map((tag) => (
+                <Badge
+                  key={tag.id}
+                  variant="secondary"
+                  className="cursor-pointer text-xs py-0 h-5"
+                  onClick={() => onSelect(tag)}
+                >
+                  {tag.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
 
-          {relatedNotes.length > 0 && (
-            <div className="space-y-1.5">
-              <div className="text-xs text-muted-foreground">
-                Notes with Common Tags
-              </div>
-              <div className="space-y-0.5">
-                {relatedNotes.map((note) => (
-                  <Button
-                    key={note.id}
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start text-xs font-normal h-7"
-                    onClick={() => onSelect(note)}
-                  >
-                    {note.name}
-                  </Button>
-                ))}
-              </div>
+        {isExpanded && relatedNotes.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="text-xs text-muted-foreground">
+              Notes with Common Tags
             </div>
-          )}
-        </div>
-      )}
+            <div className="space-y-0.5">
+              {relatedNotes.map((note) => (
+                <Button
+                  key={note.id}
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-xs font-normal h-7"
+                  onClick={() => onSelect(note)}
+                >
+                  {note.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
