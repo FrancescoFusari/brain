@@ -7,34 +7,38 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Search } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const NotesListPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
 
   const { data: notes, isLoading, error } = useQuery({
     queryKey: ['notes'],
     queryFn: async () => {
-      console.log('Fetching notes and analyzed emails from combined_notes_view...');
-      const { data, error } = await supabase
-        .from('combined_notes_view')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching notes and emails:', error);
-        throw error;
+      console.log('Fetching notes...');
+      try {
+        const { data, error } = await supabase
+          .from('combined_notes_view')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+        
+        console.log('Notes fetched successfully:', data);
+        return data || [];
+      } catch (err) {
+        console.error('Error fetching notes:', err);
+        toast({
+          title: "Error fetching notes",
+          description: "Please try again later or check your connection",
+          variant: "destructive",
+        });
+        throw err;
       }
-      
-      // Filter out null entries and ensure required fields are present
-      const validData = data?.filter(item => 
-        item && 
-        item.id && 
-        item.content && 
-        item.created_at
-      ) || [];
-      
-      console.log('Notes and emails fetched:', validData);
-      return validData;
     },
   });
 
@@ -65,7 +69,7 @@ const NotesListPage = () => {
                 <div className="text-center py-12 text-secondary">Loading notes...</div>
               ) : error ? (
                 <div className="text-center text-red-500 py-12">
-                  Error loading notes. Please try again.
+                  Error loading notes. Please try refreshing the page.
                 </div>
               ) : (
                 <NoteList notes={filteredNotes || []} />
