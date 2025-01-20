@@ -33,7 +33,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
   return (
     <div 
       className={cn(
-        "bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200 max-w-full overflow-hidden",
+        "bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200 w-full max-w-full overflow-hidden",
         isExpanded ? "p-3" : "p-2"
       )}
     >
