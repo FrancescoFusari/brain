@@ -65,8 +65,8 @@ export const GraphSearch = ({ nodes, onNodeSelect }: GraphSearchProps) => {
       
       {results.length > 0 && (
         <div className="mt-2 mx-auto w-[80%]">
-          <ScrollArea className="h-[400px] rounded-lg border bg-background/95 backdrop-blur-sm">
-            <div className="p-2 space-y-1">
+          <ScrollArea className="h-[400px] rounded-lg border bg-transparent">
+            <div className="p-2 space-y-1 w-full">
               {results.map((node) => (
                 <SearchResult
                   key={node.id}
