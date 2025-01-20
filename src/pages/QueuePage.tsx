@@ -38,21 +38,6 @@ type QueueItem = {
   user_id: string;
 };
 
-type SenderStat = {
-  sender: string;
-  count: number;
-};
-
-const extractSenderName = (email: string) => {
-  const nameMatch = email.match(/^([^<]+)</);
-  if (nameMatch) {
-    return nameMatch[1].trim();
-  }
-  return email.split('@')[0].split('.').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
-};
-
 const QueuePage = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -60,25 +45,47 @@ const QueuePage = () => {
   const [selectedSender, setSelectedSender] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
-  const { data: queueItems, isLoading } = useQuery({
+
+  // Check authentication status
+  const { data: session } = useQuery({
+    queryKey: ['session'],
+    queryFn: async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      return session;
+    },
+  });
+
+  // Fetch queue items with error handling
+  const { data: queueItems, isLoading, error } = useQuery({
     queryKey: ["queue-items"],
     queryFn: async () => {
       console.log("Fetching queue items...");
-      const { data, error } = await supabase
-        .from("email_processing_queue")
-        .select("*")
-        .order("received_at", { ascending: false });
+      try {
+        if (!session?.user) {
+          throw new Error("Not authenticated");
+        }
 
-      if (error) {
-        console.error("Error fetching queue items:", error);
-        throw error;
+        const { data, error } = await supabase
+          .from("email_processing_queue")
+          .select("*")
+          .order("received_at", { ascending: false });
+
+        if (error) {
+          console.error("Error fetching queue items:", error);
+          throw error;
+        }
+
+        console.log("Queue items fetched:", data);
+        return data as QueueItem[];
+      } catch (err) {
+        console.error("Error in queue items query:", err);
+        throw err;
       }
-
-      console.log("Queue items fetched:", data);
-      return data as QueueItem[];
     },
-    refetchInterval: 5000,
+    enabled: !!session?.user,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const processEmailMutation = useMutation({
@@ -148,10 +155,39 @@ const QueuePage = () => {
     return filtered;
   }, [queueItems, searchQuery, selectedSender]);
 
+  // Handle loading state
   if (isLoading) {
     return (
       <div className="container mx-auto p-4 flex items-center justify-center min-h-[200px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="container mx-auto p-4 mt-8">
+        <div className="text-center space-y-4">
+          <p className="text-destructive">Error loading queue items</p>
+          <Button 
+            variant="outline" 
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["queue-items"] })}
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle authentication state
+  if (!session?.user) {
+    return (
+      <div className="container mx-auto p-4 mt-8">
+        <div className="text-center text-muted-foreground">
+          Please log in to view the queue
+        </div>
       </div>
     );
   }
