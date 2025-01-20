@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
@@ -36,6 +36,21 @@ type QueueItem = {
   received_at: string;
   email_body: string | null;
   user_id: string;
+};
+
+type SenderStat = {
+  sender: string;
+  count: number;
+};
+
+const extractSenderName = (email: string) => {
+  const nameMatch = email.match(/^([^<]+)</);
+  if (nameMatch) {
+    return nameMatch[1].trim();
+  }
+  return email.split('@')[0].split('.').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
 };
 
 const QueuePage = () => {
