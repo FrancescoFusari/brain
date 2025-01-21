@@ -49,7 +49,7 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
 
     // Create the simulation
     const simulation = d3.forceSimulation(nodesData)
-      .force("link", d3.forceLink(linksData).id((d: any) => d.id))
+      .force("link", d3.forceLink(linksData).id((d: any) => d.id).distance(30))
       .force("charge", d3.forceManyBody().strength(-300))
       .force("x", d3.forceX())
       .force("y", d3.forceY())
@@ -75,10 +75,10 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
       .attr("stroke-width", 1.5)
       .call(drag(simulation) as any);
 
-    // Add node labels
+    // Add node labels only for notes
     const labels = g.append("g")
       .selectAll("text")
-      .data(nodesData)
+      .data(nodesData.filter(d => d.type === 'note'))
       .join("text")
       .text((d: NetworkNode) => d.name)
       .attr("font-size", "8px")
