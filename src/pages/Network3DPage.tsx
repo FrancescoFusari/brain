@@ -43,9 +43,11 @@ const Network3DPage = () => {
 
   return (
     <div className="fixed inset-0">
-      <GraphSearch nodes={nodes} onNodeSelect={handleNodeSelect} />
-      <div className="w-full h-screen pt-16 pb-16 md:pb-0">
+      <div className="absolute inset-0">
         <Network3DGraph ref={graphRef} notes={notes} />
+      </div>
+      <div className="absolute inset-x-0 top-0 z-10">
+        <GraphSearch nodes={nodes} onNodeSelect={handleNodeSelect} />
       </div>
     </div>
   );
