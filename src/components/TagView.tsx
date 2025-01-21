@@ -39,7 +39,6 @@ export const TagView = () => {
     delay: 100,
   });
 
-  // Add the missing mutation with proper types
   const saveCategoriesMutation = useMutation({
     mutationFn: async (categories: Categories) => {
       const { data: session } = await supabase.auth.getSession();
@@ -74,7 +73,6 @@ export const TagView = () => {
     }
   });
 
-  // Add the missing function
   const shouldShowCategorizeButton = () => {
     return sortedTags.length > 0 && (!savedCategories || Object.keys(savedCategories).length === 0);
   };
@@ -389,3 +387,4 @@ export const TagView = () => {
       )}
     </div>
   );
+};
