@@ -2,26 +2,21 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { Skeleton } from "./ui/skeleton";
 import { useTags } from "@/hooks/useTags";
 import { useTagCategories } from "@/hooks/useTagCategories";
-import { TagCard } from "./tags/TagCard";
-import { CategoryCard } from "./tags/CategoryCard";
 import { NoteCard } from "./tags/NoteCard";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardHeader } from "@/components/ui/card";
+import { TagCategorization } from "./tags/TagCategorization";
+import { LifeSections } from "./tags/LifeSections";
+import { CategoriesGrid } from "./tags/CategoriesGrid";
+import { TagsGrid } from "./tags/TagsGrid";
 
 const BATCH_SIZE = 12;
 
 export const TagView = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isCategorizing, setIsCategorizing] = useState(false);
   const [displayedNotes, setDisplayedNotes] = useState<any[]>([]);
   const [hasMore, setHasMore] = useState(true);
   
@@ -31,11 +26,7 @@ export const TagView = () => {
   });
 
   const { tagMap, sortedTags } = useTags();
-  const { savedCategories, saveCategoriesMutation, lifeSections } = useTagCategories();
-
-  const shouldShowCategorizeButton = () => {
-    return sortedTags.length > 0 && (!savedCategories || Object.keys(savedCategories).length === 0);
-  };
+  const { savedCategories, lifeSections } = useTagCategories();
 
   const loadMoreNotes = useCallback(() => {
     if (!selectedTag) return;
@@ -55,62 +46,12 @@ export const TagView = () => {
     setHasMore(tagNotes.length > BATCH_SIZE);
   }, [tagMap]);
 
-  const categorizeTags = async () => {
-    setIsLoading(true);
-    try {
-      const allTags = Array.from(tagMap.keys());
-      const { data, error } = await supabase.functions.invoke('categorize-tags', {
-        body: { tags: allTags }
-      });
-
-      if (error) throw error;
-      
-      await saveCategoriesMutation.mutateAsync(data);
-      
-      toast({
-        title: "Tags categorized",
-        description: "Your tags have been organized and saved",
-      });
-    } catch (error) {
-      console.error('Error categorizing tags:', error);
-      toast({
-        title: "Error",
-        description: "Failed to categorize tags. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+  // Load more notes when scrolling to the bottom
+  useEffect(() => {
+    if (inView && hasMore) {
+      loadMoreNotes();
     }
-  };
-
-  const categorizeCategories = async () => {
-    if (!savedCategories) return;
-    
-    setIsCategorizing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('categorize-categories', {
-        body: { categories: savedCategories }
-      });
-
-      if (error) throw error;
-      
-      await saveCategoriesMutation.mutateAsync(data);
-      
-      toast({
-        title: "Categories organized",
-        description: "Your categories have been organized into life sections",
-      });
-    } catch (error) {
-      console.error('Error categorizing categories:', error);
-      toast({
-        title: "Error",
-        description: "Failed to organize categories. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCategorizing(false);
-    }
-  };
+  }, [inView, hasMore, loadMoreNotes]);
 
   if (selectedTag) {
     return (
@@ -154,96 +95,19 @@ export const TagView = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center gap-4 flex-wrap">
-        {shouldShowCategorizeButton() && (
-          <Button 
-            onClick={categorizeTags} 
-            disabled={isLoading}
-            variant="outline"
-            className="text-sm"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Categorizing...
-              </>
-            ) : (
-              "Categorize Tags"
-            )}
-          </Button>
-        )}
-        {savedCategories && (
-          <Button
-            onClick={categorizeCategories}
-            disabled={isCategorizing}
-            variant="outline"
-            className="text-sm"
-          >
-            {isCategorizing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Organizing...
-              </>
-            ) : (
-              "Organize Categories"
-            )}
-          </Button>
-        )}
-      </div>
-
-      {Object.keys(lifeSections).length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-medium text-secondary">Life Sections</h2>
-          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {Object.entries(lifeSections).map(([section, categories]) => (
-              <Card key={section} className="bg-muted/50 border-border/10">
-                <CardHeader className="p-3 md:p-4">
-                  <h3 className="font-medium capitalize text-secondary mb-2">{section}</h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {categories.map(category => (
-                      <Badge 
-                        key={category}
-                        variant="outline"
-                        className="capitalize text-xs"
-                      >
-                        {category}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
+      <TagCategorization />
+      <LifeSections sections={lifeSections} />
       {savedCategories && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-medium text-secondary">Categories and Tags</h2>
-          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {Object.entries(savedCategories).map(([category, tags]) => (
-              <CategoryCard
-                key={category}
-                category={category}
-                tags={tags}
-                onTagClick={handleTagSelect}
-              />
-            ))}
-          </div>
-        </div>
+        <CategoriesGrid 
+          categories={savedCategories} 
+          onTagClick={handleTagSelect} 
+        />
       )}
-
-      {(!savedCategories || shouldShowCategorizeButton()) && (
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedTags.map(([tag, notes]) => (
-            <TagCard
-              key={tag}
-              tag={tag}
-              count={notes.length}
-              onClick={() => handleTagSelect(tag)}
-            />
-          ))}
-        </div>
+      {(!savedCategories || Object.keys(savedCategories).length === 0) && (
+        <TagsGrid 
+          tags={sortedTags} 
+          onTagClick={handleTagSelect} 
+        />
       )}
     </div>
   );
