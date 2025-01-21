@@ -30,12 +30,18 @@ interface NoteDetailProps {
     created_at: string;
     input_type?: string;
     source_image_path?: string;
+    source_url?: string;
     metadata?: {
       technical_details?: string;
       visual_elements?: string[];
       color_palette?: string[];
       composition_notes?: string;
       estimated_date_or_period?: string;
+      key_points?: string[];
+      action_items?: string[];
+      important_dates?: string[];
+      references?: string[];
+      topics?: string[];
     };
   };
 }
@@ -145,14 +151,26 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
 
   const handleShare = async () => {
     try {
-      await navigator.share({
+      const shareData = {
         title: note.category,
         text: note.content,
         url: window.location.href
-      });
+      };
+
+      // Add URL if it's a URL note
+      if (note.input_type === 'url' && note.source_url) {
+        shareData.url = note.source_url;
+      }
+
+      await navigator.share(shareData);
     } catch (error) {
       console.error('Error sharing:', error);
-      navigator.clipboard.writeText(window.location.href);
+      // Fallback to copying URL to clipboard
+      const textToCopy = note.input_type === 'url' && note.source_url 
+        ? note.source_url 
+        : window.location.href;
+      
+      navigator.clipboard.writeText(textToCopy);
       toast({
         title: "Link copied",
         description: "The note URL has been copied to your clipboard.",
@@ -195,10 +213,7 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
   };
 
   const getTypeIcon = (type?: string) => {
-    const inputType = type?.toLowerCase();
-    console.log('Getting icon for type:', inputType); // Debug log
-    
-    switch (inputType) {
+    switch (type?.toLowerCase()) {
       case 'url':
         return <Link2Icon className="h-4 w-4" />;
       case 'image':
@@ -211,10 +226,7 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
   };
 
   const getTypeLabel = (type?: string) => {
-    const inputType = type?.toLowerCase();
-    console.log('Getting label for type:', inputType); // Debug log
-    
-    switch (inputType) {
+    switch (type?.toLowerCase()) {
       case 'url':
         return 'URL Note';
       case 'image':
@@ -234,6 +246,103 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
       .join('\n\n');
     
     return formattedContent;
+  };
+
+  const renderMetadata = () => {
+    if (!note.metadata) return null;
+
+    const sections = [
+      {
+        title: 'Technical Details',
+        content: note.metadata.technical_details,
+        type: 'text'
+      },
+      {
+        title: 'Visual Elements',
+        content: note.metadata.visual_elements,
+        type: 'badges'
+      },
+      {
+        title: 'Color Palette',
+        content: note.metadata.color_palette,
+        type: 'badges'
+      },
+      {
+        title: 'Composition Notes',
+        content: note.metadata.composition_notes,
+        type: 'text'
+      },
+      {
+        title: 'Estimated Period',
+        content: note.metadata.estimated_date_or_period,
+        type: 'text'
+      },
+      {
+        title: 'Key Points',
+        content: note.metadata.key_points,
+        type: 'badges'
+      },
+      {
+        title: 'Action Items',
+        content: note.metadata.action_items,
+        type: 'badges'
+      },
+      {
+        title: 'Important Dates',
+        content: note.metadata.important_dates,
+        type: 'badges'
+      },
+      {
+        title: 'References',
+        content: note.metadata.references,
+        type: 'badges'
+      },
+      {
+        title: 'Topics',
+        content: note.metadata.topics,
+        type: 'badges'
+      }
+    ];
+
+    const hasContent = sections.some(section => 
+      section.content && (
+        (Array.isArray(section.content) && section.content.length > 0) ||
+        (!Array.isArray(section.content) && section.content.trim() !== '')
+      )
+    );
+
+    if (!hasContent) return null;
+
+    return (
+      <div className="space-y-4 mb-6 bg-muted p-3 md:p-4 rounded-lg text-sm md:text-base">
+        <h3 className="font-semibold text-base md:text-lg">
+          {note.input_type === 'image' ? 'Image Analysis' : 'Note Analysis'}
+        </h3>
+        
+        {sections.map((section, index) => {
+          if (!section.content || 
+              (Array.isArray(section.content) && section.content.length === 0) ||
+              (!Array.isArray(section.content) && section.content.trim() === '')) {
+            return null;
+          }
+
+          return (
+            <div key={index}>
+              <h4 className="font-medium text-xs md:text-sm text-muted-foreground">{section.title}</h4>
+              {section.type === 'badges' ? (
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {(section.content as string[]).map((item, badgeIndex) => (
+                    <Badge key={badgeIndex} variant="secondary">{item}</Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1">{section.content as string}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
@@ -301,6 +410,20 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
             </div>
           )}
           
+          {note.source_url && note.input_type === 'url' && (
+            <div className="mb-4">
+              <a 
+                href={note.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline flex items-center gap-2"
+              >
+                <Link2Icon className="h-4 w-4" />
+                {note.source_url}
+              </a>
+            </div>
+          )}
+          
           <div className="whitespace-pre-wrap mb-4 text-sm md:text-base leading-relaxed break-words max-w-full overflow-hidden px-1">
             <div className="w-[94vw] lg:max-w-[65ch] mx-auto">
               {isEditing ? (
@@ -347,54 +470,7 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
             </div>
           </div>
           
-          {note.metadata && (
-            <div className="space-y-4 mb-6 bg-muted p-3 md:p-4 rounded-lg text-sm md:text-base">
-              <h3 className="font-semibold text-base md:text-lg">Image Analysis</h3>
-              
-              {note.metadata.technical_details && (
-                <div>
-                  <h4 className="font-medium text-xs md:text-sm text-muted-foreground">Technical Details</h4>
-                  <p className="mt-1">{note.metadata.technical_details}</p>
-                </div>
-              )}
-              
-              {note.metadata.visual_elements && note.metadata.visual_elements.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-xs md:text-sm text-muted-foreground">Visual Elements</h4>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {note.metadata.visual_elements.map((element, index) => (
-                      <Badge key={index} variant="secondary">{element}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {note.metadata.color_palette && note.metadata.color_palette.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-xs md:text-sm text-muted-foreground">Color Palette</h4>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {note.metadata.color_palette.map((color, index) => (
-                      <Badge key={index} variant="outline">{color}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {note.metadata.composition_notes && (
-                <div>
-                  <h4 className="font-medium text-xs md:text-sm text-muted-foreground">Composition Notes</h4>
-                  <p className="mt-1">{note.metadata.composition_notes}</p>
-                </div>
-              )}
-              
-              {note.metadata.estimated_date_or_period && (
-                <div>
-                  <h4 className="font-medium text-xs md:text-sm text-muted-foreground">Estimated Period</h4>
-                  <p className="mt-1">{note.metadata.estimated_date_or_period}</p>
-                </div>
-              )}
-            </div>
-          )}
+          {renderMetadata()}
           
           <div className="space-y-4">
             <div className="flex items-center gap-2">
