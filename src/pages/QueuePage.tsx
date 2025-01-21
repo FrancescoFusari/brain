@@ -6,9 +6,12 @@ import { QueueMobileView } from "@/components/queue/QueueMobileView";
 import { QueueFilters } from "@/components/queue/QueueFilters";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
+import { extractSenderName } from "@/utils/emailUtils";
 
 const QueuePage = () => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSender, setSelectedSender] = useState<string | null>(null);
   const queryClient = useQueryClient();

@@ -37,6 +37,37 @@ export const TagView = () => {
     threshold: 0.1,
     delay: 100,
   });
+
+  // Add the missing mutation
+  const saveCategoriesMutation = useMutation({
+    mutationFn: async (categories: Categories) => {
+      const { data: existingData } = await supabase
+        .from('tag_categories')
+        .select('*')
+        .single();
+
+      if (existingData) {
+        const { error } = await supabase
+          .from('tag_categories')
+          .update({ categories })
+          .eq('id', existingData.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('tag_categories')
+          .insert([{ categories }]);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tag-categories'] });
+    }
+  });
+
+  // Add the missing function
+  const shouldShowCategorizeButton = () => {
+    return sortedTags.length > 0 && (!savedCategories || Object.keys(savedCategories).length === 0);
+  };
   
   const { data: notes = [] } = useQuery({
     queryKey: ['notes'],
@@ -115,7 +146,6 @@ export const TagView = () => {
     setHasMore(nextBatch.length < tagNotes.length);
   }, [selectedTag, tagMap, displayedNotes.length]);
 
-  // Handle tag selection with pagination
   const handleTagSelect = useCallback((tag: string) => {
     const tagNotes = tagMap.get(tag) || [];
     setSelectedTag(tag);
