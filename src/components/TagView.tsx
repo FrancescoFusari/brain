@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { Skeleton } from "./ui/skeleton";
+import type { Json } from "@/integrations/supabase/types";
 
 interface Note {
   id: string;
@@ -38,24 +39,33 @@ export const TagView = () => {
     delay: 100,
   });
 
-  // Add the missing mutation
+  // Add the missing mutation with proper types
   const saveCategoriesMutation = useMutation({
     mutationFn: async (categories: Categories) => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user?.id) {
+        throw new Error("No authenticated user found");
+      }
+
       const { data: existingData } = await supabase
         .from('tag_categories')
         .select('*')
+        .eq('user_id', session.session.user.id)
         .single();
 
       if (existingData) {
         const { error } = await supabase
           .from('tag_categories')
-          .update({ categories })
+          .update({ categories: categories as Json })
           .eq('id', existingData.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('tag_categories')
-          .insert([{ categories }]);
+          .insert([{ 
+            categories: categories as Json,
+            user_id: session.session.user.id 
+          }]);
         if (error) throw error;
       }
     },
@@ -68,7 +78,7 @@ export const TagView = () => {
   const shouldShowCategorizeButton = () => {
     return sortedTags.length > 0 && (!savedCategories || Object.keys(savedCategories).length === 0);
   };
-  
+
   const { data: notes = [] } = useQuery({
     queryKey: ['notes'],
     queryFn: async () => {
@@ -96,7 +106,6 @@ export const TagView = () => {
     }
   });
 
-  // Memoize tag map creation
   const tagMap = useMemo(() => {
     const map = new Map<string, Note[]>();
     notes.forEach(note => {
@@ -110,14 +119,12 @@ export const TagView = () => {
     return map;
   }, [notes]);
 
-  // Sort tags by usage (memoized)
   const sortedTags = useMemo(() => 
     Array.from(tagMap.entries())
       .sort((a, b) => b[1].length - a[1].length),
     [tagMap]
   );
 
-  // Memoize life sections extraction
   const lifeSections = useMemo(() => {
     if (!savedCategories) return {};
     
@@ -134,7 +141,6 @@ export const TagView = () => {
     return sections;
   }, [savedCategories]);
 
-  // Load more notes when scrolling
   const loadMoreNotes = useCallback(() => {
     if (!selectedTag) return;
     
@@ -153,7 +159,6 @@ export const TagView = () => {
     setHasMore(tagNotes.length > BATCH_SIZE);
   }, [tagMap]);
 
-  // Load more when scrolling to bottom
   useEffect(() => {
     if (inView && hasMore) {
       loadMoreNotes();
@@ -384,4 +389,3 @@ export const TagView = () => {
       )}
     </div>
   );
-};
