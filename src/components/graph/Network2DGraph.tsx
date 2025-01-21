@@ -55,21 +55,21 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
       .force("y", d3.forceY())
       .force("collision", d3.forceCollide().radius(30));
 
-    // Add links
+    // Add links with thinner width and less opacity
     const link = g.append("g")
       .selectAll("line")
       .data(linksData)
       .join("line")
       .attr("stroke", theme === 'dark' ? '#8E9196' : '#2A2A2E')
-      .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", 1);
+      .attr("stroke-opacity", 0.3)
+      .attr("stroke-width", 0.5);
 
-    // Add nodes
+    // Add nodes with different sizes for notes and tags
     const node = g.append("g")
       .selectAll("circle")
       .data(nodesData)
       .join("circle")
-      .attr("r", 6)
+      .attr("r", (d: NetworkNode) => d.type === 'note' ? 8 : 4)
       .attr("fill", (d: NetworkNode) => d.type === 'note' ? '#EF7234' : '#E0E0D7')
       .attr("stroke", theme === 'dark' ? '#1B1B1F' : '#ffffff')
       .attr("stroke-width", 1.5)
