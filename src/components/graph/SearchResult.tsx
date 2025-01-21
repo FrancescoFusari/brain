@@ -115,15 +115,18 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
       </div>
 
       <div className={cn("space-y-3", !isExpanded && "mt-2")}>
-        <div className="space-y-1.5">
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Tag className="h-3 w-3 mr-1.5" />
-            {isExpanded ? 'Connected Tags' : 'Tags'}
+        {/* Only show tags section for notes */}
+        {node.type === 'note' && (
+          <div className="space-y-1.5">
+            <div className="flex items-center text-xs text-muted-foreground">
+              <Tag className="h-3 w-3 mr-1.5" />
+              {isExpanded ? 'Connected Tags' : 'Tags'}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {renderConnectedItems(relatedTags, 'tag')}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {renderConnectedItems(relatedTags, 'tag')}
-          </div>
-        </div>
+        )}
 
         {isExpanded && (
           <div className="space-y-1.5">
