@@ -1,37 +1,27 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo, useCallback, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader } from "@/components/ui/card";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { Skeleton } from "./ui/skeleton";
-import type { Json } from "@/integrations/supabase/types";
-
-interface Note {
-  id: string;
-  content: string;
-  tags: string[];
-  created_at: string;
-}
-
-interface Categories {
-  [key: string]: string[];
-}
+import { useTags } from "@/hooks/useTags";
+import { useTagCategories } from "@/hooks/useTagCategories";
+import { TagCard } from "./tags/TagCard";
+import { CategoryCard } from "./tags/CategoryCard";
+import { NoteCard } from "./tags/NoteCard";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const BATCH_SIZE = 12;
 
 export const TagView = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isCategorizing, setIsCategorizing] = useState(false);
-  const [displayedNotes, setDisplayedNotes] = useState<Note[]>([]);
+  const [displayedNotes, setDisplayedNotes] = useState<any[]>([]);
   const [hasMore, setHasMore] = useState(true);
   
   const { ref: intersectionRef, inView } = useInView({
@@ -39,105 +29,12 @@ export const TagView = () => {
     delay: 100,
   });
 
-  const saveCategoriesMutation = useMutation({
-    mutationFn: async (categories: Categories) => {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user?.id) {
-        throw new Error("No authenticated user found");
-      }
-
-      const { data: existingData } = await supabase
-        .from('tag_categories')
-        .select('*')
-        .eq('user_id', session.session.user.id)
-        .single();
-
-      if (existingData) {
-        const { error } = await supabase
-          .from('tag_categories')
-          .update({ categories: categories as Json })
-          .eq('id', existingData.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('tag_categories')
-          .insert([{ 
-            categories: categories as Json,
-            user_id: session.session.user.id 
-          }]);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tag-categories'] });
-    }
-  });
+  const { tagMap, sortedTags } = useTags();
+  const { savedCategories, saveCategoriesMutation, lifeSections } = useTagCategories();
 
   const shouldShowCategorizeButton = () => {
     return sortedTags.length > 0 && (!savedCategories || Object.keys(savedCategories).length === 0);
   };
-
-  const { data: notes = [] } = useQuery({
-    queryKey: ['notes'],
-    queryFn: async () => {
-      console.log("Fetching notes for tags view...");
-      const { data, error } = await supabase
-        .from('notes')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Note[];
-    }
-  });
-
-  const { data: savedCategories } = useQuery({
-    queryKey: ['tag-categories'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tag_categories')
-        .select('categories')
-        .maybeSingle();
-      
-      if (error && error.code !== 'PGRST116') throw error;
-      return data?.categories as Categories | null;
-    }
-  });
-
-  const tagMap = useMemo(() => {
-    const map = new Map<string, Note[]>();
-    notes.forEach(note => {
-      note.tags.forEach(tag => {
-        if (!map.has(tag)) {
-          map.set(tag, []);
-        }
-        map.get(tag)?.push(note);
-      });
-    });
-    return map;
-  }, [notes]);
-
-  const sortedTags = useMemo(() => 
-    Array.from(tagMap.entries())
-      .sort((a, b) => b[1].length - a[1].length),
-    [tagMap]
-  );
-
-  const lifeSections = useMemo(() => {
-    if (!savedCategories) return {};
-    
-    const sections: Record<string, string[]> = {};
-    Object.entries(savedCategories).forEach(([category]) => {
-      const [section, name] = category.split(': ');
-      if (!sections[section]) {
-        sections[section] = [];
-      }
-      if (name && !sections[section].includes(name)) {
-        sections[section].push(name);
-      }
-    });
-    return sections;
-  }, [savedCategories]);
 
   const loadMoreNotes = useCallback(() => {
     if (!selectedTag) return;
@@ -156,12 +53,6 @@ export const TagView = () => {
     setDisplayedNotes(tagNotes.slice(0, BATCH_SIZE));
     setHasMore(tagNotes.length > BATCH_SIZE);
   }, [tagMap]);
-
-  useEffect(() => {
-    if (inView && hasMore) {
-      loadMoreNotes();
-    }
-  }, [inView, hasMore, loadMoreNotes]);
 
   const categorizeTags = async () => {
     setIsLoading(true);
@@ -220,11 +111,6 @@ export const TagView = () => {
     }
   };
 
-  const getPreviewContent = (content: string) => {
-    const words = content.split(' ');
-    return words.slice(0, 18).join(' ') + (words.length > 18 ? '...' : '');
-  };
-
   if (selectedTag) {
     return (
       <div className="space-y-4 md:space-y-6">
@@ -242,20 +128,12 @@ export const TagView = () => {
         </div>
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {displayedNotes.map(note => (
-            <Card 
+            <NoteCard
               key={note.id}
-              className="note-card bg-muted/50 border-border/10 cursor-pointer"
+              title={note.content.split('\n')[0]}
+              content={note.content}
               onClick={() => navigate(`/note/${note.id}`)}
-            >
-              <CardHeader className="p-3 md:p-4 space-y-2">
-                <h3 className="font-medium text-sm md:text-base text-secondary line-clamp-1">
-                  {note.content.split('\n')[0]}
-                </h3>
-                <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">
-                  {getPreviewContent(note.content)}
-                </p>
-              </CardHeader>
-            </Card>
+            />
           ))}
         </div>
         
@@ -343,23 +221,12 @@ export const TagView = () => {
           <h2 className="text-lg font-medium text-secondary">Categories and Tags</h2>
           <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {Object.entries(savedCategories).map(([category, tags]) => (
-              <Card key={category} className="bg-muted/50 border-border/10">
-                <CardHeader className="p-3 md:p-4">
-                  <h3 className="font-medium capitalize text-secondary mb-2">{category.split(': ')[1]}</h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {tags.map(tag => (
-                      <Badge 
-                        key={tag}
-                        variant="outline"
-                        className="text-xs cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors"
-                        onClick={() => handleTagSelect(tag)}
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardHeader>
-              </Card>
+              <CategoryCard
+                key={category}
+                category={category}
+                tags={tags}
+                onTagClick={handleTagSelect}
+              />
             ))}
           </div>
         </div>
@@ -367,21 +234,13 @@ export const TagView = () => {
 
       {(!savedCategories || shouldShowCategorizeButton()) && (
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedTags.map(([tag, tagNotes]) => (
-            <Card 
+          {sortedTags.map(([tag, notes]) => (
+            <TagCard
               key={tag}
-              className="bg-muted/50 border-border/10 cursor-pointer hover:bg-muted/70 transition-colors"
+              tag={tag}
+              count={notes.length}
               onClick={() => handleTagSelect(tag)}
-            >
-              <CardHeader className="p-3 md:p-4 space-y-2">
-                <Badge variant="outline" className="text-xs inline-block">
-                  {tag}
-                </Badge>
-                <p className="text-xs text-muted-foreground">
-                  {tagNotes.length} note{tagNotes.length !== 1 ? 's' : ''}
-                </p>
-              </CardHeader>
-            </Card>
+            />
           ))}
         </div>
       )}
