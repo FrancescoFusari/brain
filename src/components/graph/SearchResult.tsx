@@ -75,19 +75,31 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
     ));
   };
 
+  // Different styling for tag vs note results
+  const containerClasses = cn(
+    "bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200",
+    node.type === 'tag' 
+      ? isExpanded ? "p-2" : "p-1.5" 
+      : isExpanded ? "p-3" : "p-2"
+  );
+
+  const headerButtonClasses = cn(
+    "flex-1 justify-start font-medium truncate gap-2",
+    node.type === 'tag' 
+      ? "text-xs h-7" 
+      : "text-sm h-8"
+  );
+
   return (
-    <div className={cn(
-      "bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200",
-      isExpanded ? "p-3" : "p-2"
-    )}>
+    <div className={containerClasses}>
       <div className="flex items-center gap-1">
         <Button
           variant="ghost"
           size="sm"
-          className="flex-1 justify-start font-medium truncate text-sm h-8 gap-2"
+          className={headerButtonClasses}
           onClick={handleToggle}
         >
-          <NodeIcon className="h-4 w-4" />
+          <NodeIcon className={cn("w-4 h-4", node.type === 'tag' && "w-3 h-3")} />
           {node.name}
         </Button>
         {node.type === 'note' && (
@@ -104,17 +116,17 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
           variant="ghost"
           size="sm"
           onClick={handleToggle}
-          className="h-8 w-8 p-0"
+          className={cn("p-0", node.type === 'tag' ? "h-7 w-7" : "h-8 w-8")}
         >
           {isExpanded ? (
-            <ChevronUp className="h-4 w-4" />
+            <ChevronUp className={cn("w-4 h-4", node.type === 'tag' && "w-3 h-3")} />
           ) : (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className={cn("w-4 h-4", node.type === 'tag' && "w-3 h-3")} />
           )}
         </Button>
       </div>
 
-      <div className={cn("space-y-3", !isExpanded && "mt-2")}>
+      <div className={cn("space-y-2", !isExpanded && "mt-1.5")}>
         {/* Only show tags section for notes */}
         {node.type === 'note' && (
           <div className="space-y-1.5">
@@ -129,7 +141,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
         )}
 
         {isExpanded && (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <div className="flex items-center text-xs text-muted-foreground">
               <Link2 className="h-3 w-3 mr-1.5" />
               Connected Notes
