@@ -1,7 +1,6 @@
 import { NoteInput } from "@/components/NoteInput";
 import { supabase } from "@/integrations/supabase/client";
 import { analyzeNote } from "@/lib/openai";
-import { GmailIntegration } from "@/components/GmailIntegration";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Waves } from "@/components/ui/waves-background";
 
@@ -61,23 +60,8 @@ const Index = () => {
             </p>
           </div>
           
-          <div className="w-full max-w-2xl mx-auto space-y-8">
+          <div className="w-full max-w-2xl mx-auto">
             <NoteInput onNoteSubmit={handleNoteSubmit} />
-            
-            {/* Gmail Integration Section */}
-            <div className="space-y-4">
-              <div className="text-center">
-                <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-medium text-foreground mb-2`}>
-                  Gmail Integration
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Add your emails to the Vault
-                </p>
-              </div>
-              <div className="flex justify-center">
-                <GmailIntegration />
-              </div>
-            </div>
           </div>
         </div>
       </div>

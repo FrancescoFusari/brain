@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
-import { LogOut, Moon, Sun, Download } from "lucide-react";
+import { LogOut, Moon, Sun, Download, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useTags } from "@/hooks/useTags";
 import { saveNotesToOfflineStorage } from "@/utils/offlineStorage";
+import { GmailIntegration } from "@/components/GmailIntegration";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const SettingsPage = () => {
   const { theme, setTheme } = useTheme();
@@ -14,6 +16,7 @@ const SettingsPage = () => {
   const [mounted, setMounted] = useState(false);
   const { notes } = useTags();
   const [isSaving, setIsSaving] = useState(false);
+  const isMobile = useIsMobile();
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -87,6 +90,20 @@ const SettingsPage = () => {
           >
             {isSaving ? 'Saving...' : 'Save Notes Offline'}
           </Button>
+        </div>
+
+        <div className="p-4 bg-card rounded-lg border space-y-4">
+          <div className="text-center">
+            <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-medium text-foreground mb-2`}>
+              Gmail Integration
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Add your emails to the Vault
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <GmailIntegration />
+          </div>
         </div>
 
         <Button
