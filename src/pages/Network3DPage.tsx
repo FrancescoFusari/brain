@@ -6,7 +6,7 @@ import { useRef, useState } from "react";
 import { ForceGraphMethods } from "react-force-graph-3d";
 import { NetworkNode, processNetworkData } from "@/utils/networkGraphUtils";
 import { Button } from "@/components/ui/button";
-import { Cube, Square } from "lucide-react";
+import { Box, Square } from "lucide-react";
 import { Network2DGraph } from "@/components/graph/Network2DGraph";
 
 const Network3DPage = () => {
@@ -63,7 +63,7 @@ const Network3DPage = () => {
         className="absolute bottom-4 right-4 z-10 bg-background/80 backdrop-blur-sm"
         onClick={() => setIs3D(!is3D)}
       >
-        {is3D ? <Square className="h-4 w-4" /> : <Cube className="h-4 w-4" />}
+        {is3D ? <Square className="h-4 w-4" /> : <Box className="h-4 w-4" />}
       </Button>
     </div>
   );
