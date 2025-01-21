@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mail } from 'lucide-react';
+import { Mail, Timer } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useNavigate } from 'react-router-dom';
 
 export const GmailIntegration = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const handleConnect = async () => {
     try {
@@ -98,6 +100,15 @@ export const GmailIntegration = () => {
       >
         <Mail className="w-4 h-4" />
         {isLoading ? 'Fetching...' : 'Fetch Recent Emails'}
+      </Button>
+      <Button
+        onClick={() => navigate('/queue')}
+        variant="outline"
+        size={isMobile ? "sm" : "default"}
+        className="gap-2"
+      >
+        <Timer className="w-4 h-4" />
+        View Email Queue
       </Button>
     </div>
   );

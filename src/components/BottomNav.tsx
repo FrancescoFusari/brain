@@ -6,7 +6,6 @@ import {
   Tags,
   Network,
   Settings,
-  Timer,
 } from "lucide-react";
 
 const navItems = [
@@ -14,7 +13,6 @@ const navItems = [
   { icon: StickyNote, label: "Notes", href: "/notes" },
   { icon: Tags, label: "Tags", href: "/tags" },
   { icon: Network, label: "Network", href: "/network3d" },
-  { icon: Timer, label: "Queue", href: "/queue" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
