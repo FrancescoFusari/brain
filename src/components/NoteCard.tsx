@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Card, CardHeader } from "@/components/ui/card";
 import { CalendarIcon } from "@radix-ui/react-icons";
 import { Link2Icon, ImageIcon, MailIcon, TextIcon } from "lucide-react";
@@ -16,7 +17,7 @@ interface NoteCardProps {
   };
 }
 
-export const NoteCard = ({ note }: NoteCardProps) => {
+export const NoteCard = memo(({ note }: NoteCardProps) => {
   const navigate = useNavigate();
   
   // Get first 18 words of content
@@ -89,4 +90,6 @@ export const NoteCard = ({ note }: NoteCardProps) => {
       </CardHeader>
     </Card>
   );
-};
+});
+
+NoteCard.displayName = "NoteCard";
