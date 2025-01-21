@@ -1,4 +1,4 @@
-import { Routes, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect, useState, Suspense } from "react";
 import { Toaster } from "./components/ui/toaster";
 import { AnimatePresence } from "framer-motion";
