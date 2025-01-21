@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useInView } from "react-intersection-observer";
+import { Skeleton } from "./ui/skeleton";
 
 interface Note {
   id: string;
@@ -19,9 +21,7 @@ interface Categories {
   [key: string]: string[];
 }
 
-interface LifeSections {
-  [key: string]: string[];
-}
+const BATCH_SIZE = 12;
 
 export const TagView = () => {
   const navigate = useNavigate();
@@ -30,10 +30,18 @@ export const TagView = () => {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isCategorizing, setIsCategorizing] = useState(false);
+  const [displayedNotes, setDisplayedNotes] = useState<Note[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  
+  const { ref: intersectionRef, inView } = useInView({
+    threshold: 0.1,
+    delay: 100,
+  });
   
   const { data: notes = [] } = useQuery({
     queryKey: ['notes'],
     queryFn: async () => {
+      console.log("Fetching notes for tags view...");
       const { data, error } = await supabase
         .from('notes')
         .select('*')
@@ -57,49 +65,29 @@ export const TagView = () => {
     }
   });
 
-  const saveCategoriesMutation = useMutation({
-    mutationFn: async (categories: Categories) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('tag_categories')
-        .upsert({ 
-          categories,
-          user_id: user.id 
-        }, { 
-          onConflict: 'user_id' 
-        });
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tag-categories'] });
-    }
-  });
-
-  // Create a map of tags to notes
-  const tagMap = new Map<string, Note[]>();
-  notes.forEach(note => {
-    note.tags.forEach(tag => {
-      if (!tagMap.has(tag)) {
-        tagMap.set(tag, []);
-      }
-      tagMap.get(tag)?.push(note);
+  // Memoize tag map creation
+  const tagMap = useMemo(() => {
+    const map = new Map<string, Note[]>();
+    notes.forEach(note => {
+      note.tags.forEach(tag => {
+        if (!map.has(tag)) {
+          map.set(tag, []);
+        }
+        map.get(tag)?.push(note);
+      });
     });
-  });
+    return map;
+  }, [notes]);
 
-  // Sort tags by number of notes (most used first)
-  const sortedTags = Array.from(tagMap.entries())
-    .sort((a, b) => b[1].length - a[1].length);
+  // Sort tags by usage (memoized)
+  const sortedTags = useMemo(() => 
+    Array.from(tagMap.entries())
+      .sort((a, b) => b[1].length - a[1].length),
+    [tagMap]
+  );
 
-  const getPreviewContent = (content: string) => {
-    const words = content.split(' ');
-    return words.slice(0, 18).join(' ') + (words.length > 18 ? '...' : '');
-  };
-
-  // Extract life sections from category names
-  const getLifeSections = (): LifeSections => {
+  // Memoize life sections extraction
+  const lifeSections = useMemo(() => {
     if (!savedCategories) return {};
     
     const sections: Record<string, string[]> = {};
@@ -113,9 +101,34 @@ export const TagView = () => {
       }
     });
     return sections;
-  };
+  }, [savedCategories]);
 
-  const lifeSections = getLifeSections();
+  // Load more notes when scrolling
+  const loadMoreNotes = useCallback(() => {
+    if (!selectedTag) return;
+    
+    const tagNotes = tagMap.get(selectedTag) || [];
+    const currentLength = displayedNotes.length;
+    const nextBatch = tagNotes.slice(0, currentLength + BATCH_SIZE);
+    
+    setDisplayedNotes(nextBatch);
+    setHasMore(nextBatch.length < tagNotes.length);
+  }, [selectedTag, tagMap, displayedNotes.length]);
+
+  // Handle tag selection with pagination
+  const handleTagSelect = useCallback((tag: string) => {
+    const tagNotes = tagMap.get(tag) || [];
+    setSelectedTag(tag);
+    setDisplayedNotes(tagNotes.slice(0, BATCH_SIZE));
+    setHasMore(tagNotes.length > BATCH_SIZE);
+  }, [tagMap]);
+
+  // Load more when scrolling to bottom
+  useEffect(() => {
+    if (inView && hasMore) {
+      loadMoreNotes();
+    }
+  }, [inView, hasMore, loadMoreNotes]);
 
   const categorizeTags = async () => {
     setIsLoading(true);
@@ -174,24 +187,12 @@ export const TagView = () => {
     }
   };
 
-  // Check if we need to show the categorize button
-  const shouldShowCategorizeButton = () => {
-    if (!savedCategories) return true;
-    const currentTags = Array.from(tagMap.keys());
-    const savedTags = Object.values(savedCategories).flat();
-    return currentTags.some(tag => !savedTags.includes(tag));
+  const getPreviewContent = (content: string) => {
+    const words = content.split(' ');
+    return words.slice(0, 18).join(' ') + (words.length > 18 ? '...' : '');
   };
 
-  if (sortedTags.length === 0) {
-    return (
-      <div className="text-center text-secondary py-12">
-        No tags yet. Start by adding some notes!
-      </div>
-    );
-  }
-
   if (selectedTag) {
-    const tagNotes = tagMap.get(selectedTag) || [];
     return (
       <div className="space-y-4 md:space-y-6">
         <div className="flex items-center gap-4">
@@ -203,11 +204,11 @@ export const TagView = () => {
             ← Back to all tags
           </Button>
           <Badge variant="outline" className="text-sm text-secondary">
-            {selectedTag} ({tagNotes.length})
+            {selectedTag} ({tagMap.get(selectedTag)?.length || 0})
           </Badge>
         </div>
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {tagNotes.map(note => (
+          {displayedNotes.map(note => (
             <Card 
               key={note.id}
               className="note-card bg-muted/50 border-border/10 cursor-pointer"
@@ -224,6 +225,17 @@ export const TagView = () => {
             </Card>
           ))}
         </div>
+        
+        {hasMore && (
+          <div 
+            ref={intersectionRef}
+            className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mt-4"
+          >
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-[200px] w-full" />
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -307,7 +319,7 @@ export const TagView = () => {
                         key={tag}
                         variant="outline"
                         className="text-xs cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors"
-                        onClick={() => setSelectedTag(tag)}
+                        onClick={() => handleTagSelect(tag)}
                       >
                         {tag}
                       </Badge>
@@ -326,7 +338,7 @@ export const TagView = () => {
             <Card 
               key={tag}
               className="bg-muted/50 border-border/10 cursor-pointer hover:bg-muted/70 transition-colors"
-              onClick={() => setSelectedTag(tag)}
+              onClick={() => handleTagSelect(tag)}
             >
               <CardHeader className="p-3 md:p-4 space-y-2">
                 <Badge variant="outline" className="text-xs inline-block">
