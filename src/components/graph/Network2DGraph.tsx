@@ -24,30 +24,40 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
     const fg = graphRef.current;
     if (!fg) return;
 
-    // Optimized force parameters from example
-    fg.d3Force('charge')
-      .strength(-100)
-      .distanceMax(200);
+    // Wait for the next tick to ensure D3 forces are initialized
+    setTimeout(() => {
+      const charge = fg.d3Force('charge');
+      if (charge) {
+        charge.strength(-100)
+              .distanceMax(200);
+      }
 
-    fg.d3Force('link')
-      .distance(40)
-      .strength(0.2);
+      const link = fg.d3Force('link');
+      if (link) {
+        link.distance(40)
+            .strength(0.2);
+      }
 
-    fg.d3Force('collision')
-      .radius(20)
-      .strength(0.7)
-      .iterations(1);
+      const collision = fg.d3Force('collision');
+      if (collision) {
+        collision.radius(20)
+                .strength(0.7)
+                .iterations(1);
+      }
 
-    fg.d3Force('center')
-      .strength(0.05);
+      const center = fg.d3Force('center');
+      if (center) {
+        center.strength(0.05);
+      }
 
-    const timer = setTimeout(() => {
+      // Zoom to fit after forces are configured
       fg.zoomToFit(250, 10);
     }, 250);
 
     return () => {
-      clearTimeout(timer);
-      fg.pauseAnimation();
+      if (fg) {
+        fg.pauseAnimation();
+      }
     };
   }, []);
 
