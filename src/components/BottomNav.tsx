@@ -18,9 +18,38 @@ const navItems = [
 ];
 
 const itemVariants = {
-  initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: 10 },
+  initial: { 
+    opacity: 0,
+    y: 10,
+    scale: 0.95
+  },
+  animate: { 
+    opacity: 1,
+    y: 0,
+    scale: 1
+  },
+  exit: { 
+    opacity: 0,
+    y: 10,
+    scale: 0.95
+  }
+};
+
+const navVariants = {
+  initial: { 
+    opacity: 0,
+    y: 20,
+    scale: 0.95
+  },
+  animate: { 
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.3,
+      staggerChildren: 0.05
+    }
+  }
 };
 
 export function BottomNav() {
@@ -29,8 +58,9 @@ export function BottomNav() {
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 md:hidden">
       <motion.nav 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        variants={navVariants}
+        initial="initial"
+        animate="animate"
         className="bg-background/60 backdrop-blur-xl border border-border/10 rounded-full shadow-lg"
       >
         <div className="flex items-center px-4 h-16">
@@ -42,12 +72,10 @@ export function BottomNav() {
                 <motion.div
                   key={item.href}
                   variants={itemVariants}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
                   transition={{ 
-                    duration: 0.2,
-                    delay: index * 0.05,
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 30
                   }}
                 >
                   <Link
@@ -67,8 +95,8 @@ export function BottomNav() {
                         className="absolute -bottom-1 left-1/2 w-1 h-1 bg-primary rounded-full"
                         transition={{
                           type: "spring",
-                          stiffness: 300,
-                          damping: 30,
+                          stiffness: 400,
+                          damping: 30
                         }}
                       />
                     )}

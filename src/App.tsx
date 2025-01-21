@@ -17,9 +17,27 @@ import EmailDetailsPage from "./pages/EmailDetailsPage";
 import { supabase } from "./integrations/supabase/client";
 
 const pageVariants = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 },
+  initial: { 
+    opacity: 0,
+    x: -20,
+    scale: 0.98
+  },
+  animate: { 
+    opacity: 1,
+    x: 0,
+    scale: 1
+  },
+  exit: { 
+    opacity: 0,
+    x: 20,
+    scale: 0.98
+  },
+};
+
+const pageTransition = {
+  type: "tween",
+  ease: "easeInOut",
+  duration: 0.3
 };
 
 function App() {
@@ -50,14 +68,15 @@ function App() {
       <div className="min-h-screen bg-background w-full">
         {isAuthenticated && <DesktopNav />}
         <main className={`${isAuthenticated ? "pt-24 pb-28 md:pb-4" : ""} px-2 md:px-8`}>
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
               variants={pageVariants}
               initial="initial"
               animate="animate"
               exit="exit"
-              transition={{ duration: 0.3 }}
+              transition={pageTransition}
+              className="w-full h-full"
             >
               <Routes location={location}>
                 <Route
