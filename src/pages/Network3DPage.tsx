@@ -2,18 +2,25 @@ import { Network3DGraph } from "@/components/graph/Network3DGraph";
 import { GraphSearch } from "@/components/graph/GraphSearch";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useRef, useState } from "react";
+import { useRef, useState, Suspense } from "react";
 import { ForceGraphMethods } from "react-force-graph-3d";
 import { NetworkNode, processNetworkData } from "@/utils/networkGraphUtils";
 import { Button } from "@/components/ui/button";
 import { Box, Square } from "lucide-react";
 import { Network2DGraph } from "@/components/graph/Network2DGraph";
 
+// Loading component for the graph
+const GraphLoader = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
+
 const Network3DPage = () => {
   const graphRef = useRef<ForceGraphMethods>();
   const [is3D, setIs3D] = useState(true);
   
-  const { data: notes = [] } = useQuery({
+  const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -45,14 +52,20 @@ const Network3DPage = () => {
     );
   };
 
+  if (isLoading) {
+    return <GraphLoader />;
+  }
+
   return (
     <div className="fixed inset-0">
       <div className="absolute inset-0">
-        {is3D ? (
-          <Network3DGraph ref={graphRef} notes={notes} />
-        ) : (
-          <Network2DGraph notes={notes} />
-        )}
+        <Suspense fallback={<GraphLoader />}>
+          {is3D ? (
+            <Network3DGraph ref={graphRef} notes={notes} />
+          ) : (
+            <Network2DGraph notes={notes} />
+          )}
+        </Suspense>
       </div>
       <div className="absolute inset-x-0 top-0 z-10">
         <GraphSearch nodes={nodes} onNodeSelect={handleNodeSelect} />
