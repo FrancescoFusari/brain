@@ -52,10 +52,10 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
       fg.d3Force('collision', d3.forceCollide()
         .radius((node: NetworkNode) => {
           switch (node.type) {
-            case 'section': return 8;
-            case 'category': return 6;
-            case 'note': return 4;
-            default: return 3;
+            case 'section': return 12;    // Increased from 8
+            case 'category': return 8;    // Increased from 6
+            case 'note': return 5;        // Increased from 4
+            default: return 3;            // Tags stay the same size
           }
         })
         .strength(0.9)
@@ -83,19 +83,19 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
 
     const getNodeColor = useCallback((node: NetworkNode) => {
       switch (node.type) {
-        case 'section': return '#9333ea';  // Purple
-        case 'category': return '#f59e0b'; // Amber
-        case 'note': return '#ef4444';     // Red
-        default: return '#22c55e';         // Green (tags)
+        case 'section': return '#9333ea';     // Purple - more vibrant
+        case 'category': return '#f59e0b';    // Amber - more vibrant
+        case 'note': return '#ef4444';        // Red - more vibrant
+        default: return '#22c55e';            // Green - more vibrant for tags
       }
     }, []);
 
     const getNodeSize = useCallback((node: NetworkNode) => {
       switch (node.type) {
-        case 'section': return isMobile ? 3 : 4;
-        case 'category': return isMobile ? 2.5 : 3.5;
-        case 'note': return isMobile ? 2 : 3;
-        default: return isMobile ? 1.5 : 2;
+        case 'section': return isMobile ? 4.5 : 6;     // Increased from 3/4
+        case 'category': return isMobile ? 3.5 : 4.5;  // Increased from 2.5/3.5
+        case 'note': return isMobile ? 2.5 : 3.5;      // Increased from 2/3
+        default: return isMobile ? 1.5 : 2;            // Tags stay the same size
       }
     }, [isMobile]);
 
@@ -109,7 +109,7 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
         new THREE.MeshLambertMaterial({ 
           color: getNodeColor(node),
           transparent: true,
-          opacity: 0.8
+          opacity: 0.85  // Slightly increased opacity
         })
       );
       group.add(sphere);
@@ -118,10 +118,10 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
       if (!isMobile || ['section', 'category'].includes(node.type) || node.connections?.length > 3) {
         const sprite = new SpriteText(node.name);
         sprite.color = '#ffffff';
-        sprite.textHeight = isMobile ? 1.5 : 2.5;
-        sprite.backgroundColor = 'rgba(0,0,0,0.5)';
-        sprite.padding = isMobile ? 0.5 : 1;
-        sprite.borderRadius = 2;
+        sprite.textHeight = isMobile ? 2 : 3;  // Increased text size
+        sprite.backgroundColor = 'rgba(0,0,0,0.6)';  // More opaque background
+        sprite.padding = isMobile ? 0.8 : 1.2;  // Increased padding
+        sprite.borderRadius = 3;
         (sprite as unknown as THREE.Object3D).position.set(getNodeSize(node) + 2, 0, 0);
         group.add(sprite);
       }
@@ -146,8 +146,8 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
           nodeColor={getNodeColor}
           backgroundColor="#1B1B1F"
           linkColor={() => "#8E9196"}
-          linkWidth={0.2}
-          linkOpacity={0.3}
+          linkWidth={0.3}  // Slightly increased from 0.2
+          linkOpacity={0.4}  // Slightly increased from 0.3
           linkDirectionalParticles={0}
           enableNavigationControls={true}
           enableNodeDrag={true}
