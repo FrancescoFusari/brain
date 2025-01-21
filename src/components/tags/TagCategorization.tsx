@@ -1,10 +1,10 @@
+import { useState, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useTagCategories } from "@/hooks/useTagCategories";
 import { useTags } from "@/hooks/useTags";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { memo } from "react";
 
 export const TagCategorization = memo(() => {
   const { toast } = useToast();
