@@ -22,28 +22,30 @@ export function BottomNav() {
   const location = useLocation();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-muted bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
-      <nav className="flex h-16 items-center px-4">
-        <div className="flex w-full justify-around">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex flex-col items-center justify-center rounded-lg p-2 transition-colors",
-                  isActive 
-                    ? "text-primary" 
-                    : "text-muted-foreground hover:text-secondary"
-                )}
-              >
-                <Icon className="h-5 w-5" />
-                <span className="mt-1 text-xs font-medium">{item.label}</span>
-              </Link>
-            );
-          })}
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 md:hidden">
+      <nav className="bg-background/95 backdrop-blur-lg border border-border/10 rounded-full shadow-lg">
+        <div className="flex items-center px-4 h-16">
+          <div className="flex justify-around gap-1 md:gap-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={cn(
+                    "flex flex-col items-center justify-center px-3 py-2 rounded-full transition-all duration-200",
+                    isActive 
+                      ? "text-primary bg-muted" 
+                      : "text-muted-foreground hover:text-primary hover:bg-muted/50"
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="mt-1 text-[10px] font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </nav>
     </div>
