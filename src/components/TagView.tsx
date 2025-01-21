@@ -11,6 +11,8 @@ import { TagCategorization } from "./tags/TagCategorization";
 import { LifeSections } from "./tags/LifeSections";
 import { CategoriesGrid } from "./tags/CategoriesGrid";
 import { TagsGrid } from "./tags/TagsGrid";
+import { saveNotesToOfflineStorage, getOfflineNotes } from "@/utils/offlineStorage";
+import { useToast } from "./ui/use-toast";
 
 const BATCH_SIZE = 12;
 
@@ -19,14 +21,33 @@ export const TagView = () => {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [displayedNotes, setDisplayedNotes] = useState<any[]>([]);
   const [hasMore, setHasMore] = useState(true);
+  const { toast } = useToast();
   
   const { ref: intersectionRef, inView } = useInView({
     threshold: 0.1,
     delay: 100,
   });
 
-  const { tagMap, sortedTags } = useTags();
+  const { tagMap, sortedTags, notes } = useTags();
   const { savedCategories, lifeSections } = useTagCategories();
+
+  // Save notes to offline storage whenever they change
+  useEffect(() => {
+    if (notes && notes.length > 0) {
+      saveNotesToOfflineStorage(notes)
+        .then(() => {
+          console.log('Notes saved to offline storage');
+        })
+        .catch(error => {
+          console.error('Error saving notes to offline storage:', error);
+          toast({
+            title: "Offline Storage Error",
+            description: "Failed to save notes for offline access",
+            variant: "destructive",
+          });
+        });
+    }
+  }, [notes, toast]);
 
   const loadMoreNotes = useCallback(() => {
     if (!selectedTag) return;
