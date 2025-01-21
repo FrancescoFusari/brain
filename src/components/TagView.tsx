@@ -12,6 +12,7 @@ import { CategoryCard } from "./tags/CategoryCard";
 import { NoteCard } from "./tags/NoteCard";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Card, CardHeader } from "@/components/ui/card";
 
 const BATCH_SIZE = 12;
 
