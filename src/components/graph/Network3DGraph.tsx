@@ -38,6 +38,13 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
       const fg = localRef.current;
       if (!fg) return;
 
+      // Ensure nodes have initial positions
+      nodes.forEach(node => {
+        node.x = node.x || Math.random() * 100 - 50;
+        node.y = node.y || Math.random() * 100 - 50;
+        node.z = node.z || Math.random() * 100 - 50;
+      });
+
       fg.pauseAnimation();
       fg.cameraPosition({ x: 0, y: 0, z: isMobile ? 300 : 200 });
       
@@ -68,7 +75,7 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
         clearTimeout(timer);
         if (fg) fg.pauseAnimation();
       };
-    }, [isMobile]);
+    }, [isMobile, nodes]);
 
     // Handle ref assignment
     useEffect(() => {
@@ -101,6 +108,8 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
 
     // Optimized node object creation
     const createNodeObject = useCallback((node: NetworkNode) => {
+      if (!node) return null;  // Safety check for null nodes
+      
       const group = new THREE.Group();
       
       const sphereGeometry = new THREE.SphereGeometry(getNodeSize(node));
@@ -129,8 +138,13 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
       return group;
     }, [isMobile, getNodeColor, getNodeSize]);
 
-    // Optimized node drag handler
+    // Optimized node drag handler with safety checks
     const handleNodeDragEnd = useCallback((node: NetworkNode) => {
+      if (!node || typeof node.x !== 'number' || typeof node.y !== 'number' || typeof node.z !== 'number') {
+        console.warn('Invalid node position during drag end:', node);
+        return;
+      }
+      
       node.fx = node.x;
       node.fy = node.y;
       node.fz = node.z;
