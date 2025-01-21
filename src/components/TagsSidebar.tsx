@@ -34,36 +34,26 @@ export const TagsSidebar = () => {
   const [open, setOpen] = useState(false);
 
   return (
-    <>
-      {/* Desktop Sidebar */}
-      <div className="hidden md:block">
-        <div className="floating-sidebar mt-[84px]">
+    <div className="md:hidden">
+      <Button
+        variant="outline"
+        size="icon"
+        className="fixed top-4 left-4 z-50 bg-background/50 backdrop-blur-sm border-border/10"
+        onClick={() => setOpen(!open)}
+      >
+        {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+      </Button>
+
+      <div
+        className={`fixed inset-y-0 left-0 w-[280px] bg-background/90 backdrop-blur-sm border-r border-border/10 transform transition-transform duration-300 ease-in-out ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="h-full overflow-y-auto pt-16 pb-4">
           <SidebarContentComponent />
         </div>
       </div>
-
-      {/* Mobile Layout */}
-      <div className="md:hidden">
-        <Button
-          variant="outline"
-          size="icon"
-          className="fixed top-4 left-4 z-50 bg-background/50 backdrop-blur-sm border-border/10"
-          onClick={() => setOpen(!open)}
-        >
-          {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-        </Button>
-
-        <div
-          className={`fixed inset-y-0 left-0 w-[280px] bg-background/90 backdrop-blur-sm border-r border-border/10 transform transition-transform duration-300 ease-in-out ${
-            open ? 'translate-x-0' : '-translate-x-full'
-          }`}
-        >
-          <div className="h-full overflow-y-auto pt-16 pb-4">
-            <SidebarContentComponent />
-          </div>
-        </div>
-      </div>
-    </>
+    </div>
   );
 };
 

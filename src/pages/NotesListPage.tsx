@@ -52,7 +52,7 @@ const NotesListPage = () => {
       <div className="flex min-h-screen w-full">
         <TagsSidebar />
         <div className="flex-1">
-          <div className="container mx-auto py-4 md:py-8 px-2 md:px-4 md:mt-16">
+          <div className="container mx-auto py-4 md:py-8 px-2 md:px-4">
             <div className="flex flex-col space-y-4 md:space-y-6">
               <h1 className="text-2xl font-semibold text-secondary">Vault</h1>
               <div className="relative w-full">
