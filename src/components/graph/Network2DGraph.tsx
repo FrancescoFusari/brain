@@ -31,10 +31,21 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
     const nodesData = nodes.map(d => ({...d}));
     const linksData = links.map(d => ({...d}));
 
-    // Create SVG
+    // Create SVG with zoom support
     const svg = d3.select(svgRef.current)
       .attr("viewBox", [-dimensions.width / 2, -dimensions.height / 2, dimensions.width, dimensions.height])
       .attr("style", "max-width: 100%; height: auto;");
+
+    // Add zoom behavior
+    const g = svg.append("g");
+    
+    const zoom = d3.zoom()
+      .scaleExtent([0.1, 4])
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform);
+      });
+
+    svg.call(zoom as any);
 
     // Create the simulation
     const simulation = d3.forceSimulation(nodesData)
@@ -45,7 +56,7 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
       .force("collision", d3.forceCollide().radius(30));
 
     // Add links
-    const link = svg.append("g")
+    const link = g.append("g")
       .selectAll("line")
       .data(linksData)
       .join("line")
@@ -54,7 +65,7 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
       .attr("stroke-width", 1);
 
     // Add nodes
-    const node = svg.append("g")
+    const node = g.append("g")
       .selectAll("circle")
       .data(nodesData)
       .join("circle")
@@ -65,7 +76,7 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
       .call(drag(simulation) as any);
 
     // Add node labels
-    const labels = svg.append("g")
+    const labels = g.append("g")
       .selectAll("text")
       .data(nodesData)
       .join("text")
@@ -86,6 +97,16 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
           description: `Connected to ${d.connections?.length || 0} items`,
         });
       }
+    });
+
+    // Add double click to zoom
+    svg.on("dblclick.zoom", null);
+    
+    // Reset zoom on double click
+    svg.on("dblclick", () => {
+      svg.transition()
+        .duration(750)
+        .call(zoom.transform as any, d3.zoomIdentity);
     });
 
     // Update positions on simulation tick
