@@ -36,7 +36,7 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
       fg.pauseAnimation();
       fg.cameraPosition({ x: 0, y: 0, z: isMobile ? 250 : 150 });
       
-      // Optimized force parameters
+      // Optimized force parameters for better mobile performance
       const forceStrength = isMobile ? -15 : -30;
       const distanceMax = isMobile ? 120 : 200;
       const linkDistance = isMobile ? 25 : 40;
@@ -51,9 +51,11 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
         .iterations(1)
       );
 
-      setTimeout(() => fg.resumeAnimation(), 50);
+      // Delayed animation start for better initial performance
+      const timer = setTimeout(() => fg.resumeAnimation(), 50);
 
       return () => {
+        clearTimeout(timer);
         if (fg) fg.pauseAnimation();
       };
     }, [isMobile]);
@@ -69,7 +71,7 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
       }
     }, [ref]);
 
-    // Optimized node object creation
+    // Optimized node object creation with mobile considerations
     const createNodeObject = useCallback((node: NetworkNode) => {
       if (node.type === 'note') {
         const group = new THREE.Group();
@@ -85,19 +87,21 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
         );
         group.add(sphere);
         
-        const sprite = new SpriteText(node.name);
-        sprite.color = '#ffffff';
-        sprite.textHeight = isMobile ? 1.2 : 2;
-        sprite.backgroundColor = 'rgba(0,0,0,0.5)';
-        sprite.padding = isMobile ? 0.3 : 1;
-        sprite.borderRadius = 2;
-        (sprite as unknown as THREE.Object3D).position.set(4, 0, 0);
-        
-        group.add(sprite);
+        // Only add text sprites on desktop or for important nodes
+        if (!isMobile || node.connections?.length > 3) {
+          const sprite = new SpriteText(node.name);
+          sprite.color = '#ffffff';
+          sprite.textHeight = isMobile ? 1.2 : 2;
+          sprite.backgroundColor = 'rgba(0,0,0,0.5)';
+          sprite.padding = isMobile ? 0.3 : 1;
+          sprite.borderRadius = 2;
+          (sprite as unknown as THREE.Object3D).position.set(4, 0, 0);
+          group.add(sprite);
+        }
         
         return group;
       } else {
-        // Simplified tag representation without labels
+        // Simplified tag representation for better performance
         return new THREE.Mesh(
           new THREE.SphereGeometry(isMobile ? 1 : 1.5),
           new THREE.MeshLambertMaterial({ 
@@ -109,7 +113,7 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
       }
     }, [isMobile]);
 
-    // Handle node drag
+    // Optimized node drag handler
     const handleNodeDragEnd = useCallback((node: NetworkNode) => {
       node.fx = node.x;
       node.fy = node.y;
