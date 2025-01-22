@@ -178,8 +178,8 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+    <div className="space-y-6 max-w-full overflow-hidden">
+      <div className="flex items-center justify-between gap-4 px-4">
         <Button variant="ghost" onClick={() => navigate('/')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Notes
@@ -203,7 +203,7 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
         </div>
       </div>
 
-      <Card>
+      <Card className="max-w-full overflow-hidden">
         <CardHeader>
           <NoteHeader
             category={note.category}
@@ -214,7 +214,7 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
           />
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="space-y-6">
           {imageUrl && (
             <div className="mb-6">
               <img 
@@ -226,14 +226,14 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
           )}
           
           {note.source_url && note.input_type === 'url' && (
-            <div className="mb-4">
+            <div className="mb-4 px-4">
               <a 
                 href={note.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline flex items-center gap-2"
+                className="text-primary hover:underline flex items-center gap-2 break-all"
               >
-                <Link2Icon className="h-4 w-4" />
+                <Link2Icon className="h-4 w-4 flex-shrink-0" />
                 {note.source_url}
               </a>
             </div>

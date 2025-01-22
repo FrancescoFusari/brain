@@ -38,14 +38,14 @@ export const NoteContent = ({
     : content;
 
   return (
-    <div className="whitespace-pre-wrap mb-4 text-sm md:text-base leading-relaxed break-words max-w-full overflow-hidden px-1">
-      <div className="w-[94vw] lg:max-w-[65ch] mx-auto">
+    <div className="whitespace-pre-wrap mb-4 text-sm md:text-base leading-relaxed break-words w-full overflow-hidden">
+      <div className="max-w-full md:max-w-[65ch] mx-auto px-4">
         {isEditing ? (
           <div className="space-y-2">
             <Textarea
               value={content}
               onChange={(e) => onContentChange(e.target.value)}
-              className="min-h-[200px]"
+              className="min-h-[200px] w-full"
             />
             <div className="flex justify-end gap-2">
               <Button
@@ -62,11 +62,11 @@ export const NoteContent = ({
         ) : (
           <div>
             {formatContent(displayContent).split('\n\n').map((paragraph, index) => (
-              <p key={index} className="mb-4 last:mb-0">
+              <p key={index} className="mb-4 last:mb-0 break-words">
                 {paragraph}
               </p>
             ))}
-            <div className="flex gap-2 mt-4">
+            <div className="flex flex-wrap gap-2 mt-4">
               {shouldCollapse && (
                 <Button
                   variant="outline"
