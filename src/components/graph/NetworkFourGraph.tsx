@@ -201,6 +201,8 @@ class Network3DGraph {
   }
 
   createNodes() {
+    console.log("Creating nodes:", this.nodes.length);
+    
     const typeGeometry = {
       section: new THREE.SphereGeometry(this.getNodeSize('section')),
       category: new THREE.SphereGeometry(this.getNodeSize('category')),
@@ -209,26 +211,37 @@ class Network3DGraph {
     };
 
     this.nodes.forEach(node => {
-      const geometry = typeGeometry[node.type] || typeGeometry.default;
-      const material = new THREE.MeshLambertMaterial({
-        color: this.getNodeColor(node.type),
-        transparent: true,
-        opacity: 0.85
-      });
+      try {
+        const geometry = typeGeometry[node.type] || typeGeometry.default;
+        const material = new THREE.MeshLambertMaterial({
+          color: this.getNodeColor(node.type),
+          transparent: true,
+          opacity: 0.85
+        });
 
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(
-        node.x || Math.random() * 100 - 50,
-        node.y || Math.random() * 100 - 50,
-        node.z || Math.random() * 100 - 50
-      );
-
-      node.mesh = mesh;
-      this.scene.add(mesh);
-      this.nodePositions.set(node.id, mesh.position.clone());
-
-      if (this.shouldAddLabel(node)) {
-        this.createTextLabel(node);
+        const mesh = new THREE.Mesh(geometry, material);
+        
+        // Ensure initial position
+        const initialPosition = new THREE.Vector3(
+          node.x || Math.random() * 100 - 50,
+          node.y || Math.random() * 100 - 50,
+          node.z || Math.random() * 100 - 50
+        );
+        
+        mesh.position.copy(initialPosition);
+        node.mesh = mesh;
+        this.scene.add(mesh);
+        
+        // Initialize force vector
+        node.force = new THREE.Vector3();
+        
+        if (this.shouldAddLabel(node)) {
+          this.createTextLabel(node);
+        }
+        
+        this.nodePositions.set(node.id, mesh.position.clone());
+      } catch (error) {
+        console.error("Error creating node:", node, error);
       }
     });
   }
@@ -264,7 +277,7 @@ class Network3DGraph {
 
     const linkGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(this.links.length * 6);
-    const colors = new Float32Array(this.links.length * 6); // Changed from 8 to 6 to match positions
+    const colors = new Float32Array(this.links.length * 6);
     
     linkGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     linkGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
@@ -343,42 +356,74 @@ class Network3DGraph {
   }
 
   applyForces() {
+    console.log("Applying forces to nodes:", this.nodes.length);
+    
     this.nodes.forEach(node => {
-      if (node.fixed) return;
+      if (!node.mesh?.position || node.fixed) {
+        console.log("Skipping node without position or fixed:", node.id);
+        return;
+      }
+      
+      // Initialize force if not exists
+      if (!node.force) {
+        node.force = new THREE.Vector3();
+      }
       
       // Apply repulsive forces
       this.nodes.forEach(other => {
-        if (node === other) return;
+        if (node === other || !other.mesh?.position) return;
         
-        const delta = new THREE.Vector3().subVectors(
-          other.mesh.position,
-          node.mesh.position
-        );
-        
-        const distanceSq = delta.lengthSq();
-        if (distanceSq < 1e-6) return;
-        
-        const force = this.physicsParams.chargeForce / distanceSq;
-        delta.multiplyScalar(force);
-        node.force.sub(delta);
+        try {
+          const delta = new THREE.Vector3().subVectors(
+            other.mesh.position,
+            node.mesh.position
+          );
+          
+          const distanceSq = delta.lengthSq();
+          if (distanceSq < 1e-6) return;
+          
+          const force = this.physicsParams.chargeForce / distanceSq;
+          delta.multiplyScalar(force);
+          node.force.sub(delta);
+        } catch (error) {
+          console.warn("Error calculating repulsive force:", error);
+        }
       });
     });
 
     // Apply link forces
     this.links.forEach(link => {
-      const delta = new THREE.Vector3().subVectors(
-        link.target.mesh.position,
-        link.source.mesh.position
-      );
-      
-      const distance = delta.length();
-      const normDistance = (distance - this.physicsParams.linkDistance) / distance;
-      
-      if (!link.source.fixed) {
-        link.source.force.add(delta.clone().multiplyScalar(normDistance * 0.1));
+      if (!link.source?.mesh?.position || !link.target?.mesh?.position) {
+        console.log("Skipping link with invalid source/target:", link);
+        return;
       }
-      if (!link.target.fixed) {
-        link.target.force.sub(delta.clone().multiplyScalar(normDistance * 0.1));
+
+      try {
+        const delta = new THREE.Vector3().subVectors(
+          link.target.mesh.position,
+          link.source.mesh.position
+        );
+        
+        const distance = delta.length();
+        if (distance === 0) return;
+        
+        const normDistance = (distance - this.physicsParams.linkDistance) / distance;
+        
+        if (!link.source.fixed) {
+          if (!link.source.force) {
+            link.source.force = new THREE.Vector3();
+          }
+          link.source.force.add(delta.clone().multiplyScalar(normDistance * 0.1));
+        }
+        
+        if (!link.target.fixed) {
+          if (!link.target.force) {
+            link.target.force = new THREE.Vector3();
+          }
+          link.target.force.sub(delta.clone().multiplyScalar(normDistance * 0.1));
+        }
+      } catch (error) {
+        console.warn("Error calculating link force:", error);
       }
     });
   }
