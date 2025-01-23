@@ -111,7 +111,7 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
 
               return (
                 <div key={index} className="px-1 sm:px-2">
-                  <h4 className="text-sm font-medium text-[#E0E0D7] mb-3">
+                  <h4 className="text-sm font-medium text-[#EF7234] mb-3">
                     {section.title}
                   </h4>
                   {section.type === 'badges' ? (
