@@ -1,9 +1,9 @@
 import { useRef, useEffect, forwardRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
-import { Octree } from 'three/examples/jsm/math/Octree';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { Octree } from 'three/addons/math/Octree.js';
 import { Note } from '@/types/graph';
 import { processNetworkData } from '@/utils/networkGraphUtils';
 import { useIsMobile } from '@/hooks/use-mobile';

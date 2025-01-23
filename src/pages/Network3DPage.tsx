@@ -10,7 +10,7 @@ import { NetworkNode, processNetworkData } from "@/utils/networkGraphUtils";
 import { Button } from "@/components/ui/button";
 import { Box, Square } from "lucide-react";
 import { Network2DGraph } from "@/components/graph/Network2DGraph";
-import { NetworkFourGraph } from "@/components/graph/NetworkFourGraph";
+import { NetworkFourGraph, FourGraphMethods } from "@/components/graph/NetworkFourGraph";
 
 const GraphLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -21,7 +21,7 @@ const GraphLoader = () => (
 const Network3DPage = () => {
   const forceGraphRef = useRef<ForceGraphMethods>();
   const threeGraphRef = useRef<ThreeGraphMethods>();
-  const fourGraphRef = useRef<ThreeGraphMethods>();
+  const fourGraphRef = useRef<FourGraphMethods>();
   const [viewMode, setViewMode] = useState<'2d' | '3d' | 'three' | 'four'>('three');
   
   const { data: notes = [], isLoading } = useQuery({
