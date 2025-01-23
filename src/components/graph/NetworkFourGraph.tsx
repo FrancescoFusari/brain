@@ -82,6 +82,15 @@ export const NetworkFourGraph = forwardRef<FourGraphMethods, NetworkFourGraphPro
 
 NetworkFourGraph.displayName = "NetworkFourGraph";
 
+interface PhysicsParams {
+  linkDistance: number;
+  chargeForce: number;
+  centerForce: number;
+  collisionRadius: Record<string, number>;
+  damping: number;
+  iterations: number;
+}
+
 class Network3DGraph {
   container: HTMLDivElement;
   isMobile: boolean;
@@ -94,7 +103,7 @@ class Network3DGraph {
   controls: OrbitControls;
   font: any;
   linkSystem: THREE.LineSegments;
-  physicsParams: any;
+  physicsParams: PhysicsParams;
   #raycaster = new THREE.Raycaster();
   #mouse = new THREE.Vector2();
   #frameId: number | null = null;
@@ -108,7 +117,17 @@ class Network3DGraph {
     this.links = [];
     this.draggedNode = null;
 
-    // Initialize scene, camera, and renderer first
+    // Initialize physics parameters first
+    this.physicsParams = {
+      linkDistance: this.isMobile ? 30 : 50,
+      chargeForce: this.isMobile ? -20 : -40,
+      centerForce: 0.05,
+      collisionRadius: this.getCollisionRadii(),
+      damping: 0.9,
+      iterations: 2
+    };
+
+    // Initialize scene, camera, and renderer
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x1b1b1f);
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -120,25 +139,29 @@ class Network3DGraph {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.container.appendChild(this.renderer.domElement);
 
-    // Initialize controls before calling resetCamera
+    // Initialize controls
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
 
-    // Now it's safe to call resetCamera
+    // Reset camera position
     this.resetCamera();
 
     // Initialize the rest
     this.initLights();
     this.initEventListeners();
-    this.loadResources().then(() => {
+    this.loadResources(() => {
       this.processData(notes, savedCategories, lifeSections);
       this.initGraph();
       this.startAnimation();
     });
 
-    // Add controls change listener after everything is set up
-    this.controls.addEventListener('change', () => this.#physicsEnabled && this.updatePhysics());
+    // Add controls change listener
+    this.controls.addEventListener('change', () => {
+      if (this.#physicsEnabled && this.physicsParams) {
+        this.updatePhysics();
+      }
+    });
   }
 
   initLights() {
@@ -157,10 +180,11 @@ class Network3DGraph {
     this.renderer.domElement.addEventListener('mouseup', this.handleMouseUp.bind(this));
   }
 
-  async loadResources() {
+  async loadResources(callback: () => void) {
     try {
       const loader = new FontLoader();
       this.font = await loader.loadAsync('https://cdn.jsdelivr.net/npm/three@0.132.2/examples/fonts/helvetiker_regular.typeface.json');
+      callback();
     } catch (error) {
       console.error('Failed to load resources:', error);
     }
@@ -278,15 +302,6 @@ class Network3DGraph {
   }
 
   initPhysics() {
-    this.physicsParams = {
-      linkDistance: this.isMobile ? 30 : 50,
-      chargeForce: this.isMobile ? -20 : -40,
-      centerForce: 0.05,
-      collisionRadius: this.getCollisionRadii(),
-      damping: 0.9,
-      iterations: 2
-    };
-
     this.nodes.forEach(node => {
       node.velocity = new THREE.Vector3();
       node.force = new THREE.Vector3();
@@ -295,7 +310,7 @@ class Network3DGraph {
   }
 
   updatePhysics() {
-    if (!this.#physicsEnabled) return;
+    if (!this.#physicsEnabled || !this.physicsParams) return;
 
     for (let iter = 0; iter < this.physicsParams.iterations; iter++) {
       this.applyForces();
