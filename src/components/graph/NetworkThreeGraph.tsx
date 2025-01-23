@@ -56,18 +56,32 @@ export const NetworkThreeGraph = forwardRef<ThreeGraphMethods, NetworkThreeGraph
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
 
-      // Lighting
+      // Enhanced lighting setup
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
       scene.add(ambientLight);
-      const pointLight = new THREE.PointLight(0xffffff, 1);
-      pointLight.position.set(10, 10, 10);
-      scene.add(pointLight);
+
+      // Add multiple point lights for better illumination
+      const pointLight1 = new THREE.PointLight(0xffffff, 1);
+      pointLight1.position.set(100, 100, 100);
+      scene.add(pointLight1);
+
+      const pointLight2 = new THREE.PointLight(0xffffff, 0.8);
+      pointLight2.position.set(-100, -100, -100);
+      scene.add(pointLight2);
+
+      const pointLight3 = new THREE.PointLight(0xffffff, 0.6);
+      pointLight3.position.set(0, 200, 0);
+      scene.add(pointLight3);
 
       // Process graph data
       const { nodes, links } = processNetworkData(notes);
+      const radius = 100; // Radius of the sphere
 
-      // Create nodes
-      nodes.forEach(node => {
+      // Create nodes with spherical distribution
+      nodes.forEach((node, index) => {
+        const phi = Math.acos(-1 + (2 * index) / nodes.length);
+        const theta = Math.sqrt(nodes.length * Math.PI) * phi;
+
         const geometry = new THREE.SphereGeometry(
           node.type === 'section' ? 6 :
           node.type === 'category' ? 4 :
@@ -77,21 +91,26 @@ export const NetworkThreeGraph = forwardRef<ThreeGraphMethods, NetworkThreeGraph
         const material = new THREE.MeshPhongMaterial({
           color: node.type === 'section' ? 0x9333ea :
                  node.type === 'category' ? 0xf59e0b :
-                 node.type === 'note' ? 0xef4444 : 0x22c55e
+                 node.type === 'note' ? 0xef4444 : 0x22c55e,
+          shininess: 50
         });
         
         const mesh = new THREE.Mesh(geometry, material);
         
-        // Random initial position
-        mesh.position.x = (Math.random() - 0.5) * 200;
-        mesh.position.y = (Math.random() - 0.5) * 200;
-        mesh.position.z = (Math.random() - 0.5) * 200;
+        // Position on sphere surface
+        mesh.position.x = radius * Math.sin(phi) * Math.cos(theta);
+        mesh.position.y = radius * Math.sin(phi) * Math.sin(theta);
+        mesh.position.z = radius * Math.cos(phi);
+        
+        // Add velocity for force simulation
+        mesh.userData.velocity = new THREE.Vector3();
+        mesh.userData.connections = [];
         
         scene.add(mesh);
         nodesRef.current.set(node.id, mesh);
       });
 
-      // Create links
+      // Create links with curved lines
       links.forEach(link => {
         const sourceNode = nodesRef.current.get(link.source);
         const targetNode = nodesRef.current.get(link.target);
@@ -107,12 +126,50 @@ export const NetworkThreeGraph = forwardRef<ThreeGraphMethods, NetworkThreeGraph
           const geometry = new THREE.BufferGeometry().setFromPoints(points);
           const line = new THREE.Line(geometry, material);
           scene.add(line);
+
+          // Store connection for force calculation
+          sourceNode.userData.connections.push(targetNode);
+          targetNode.userData.connections.push(sourceNode);
         }
       });
 
-      // Animation loop
+      // Animation loop with forces
       const animate = () => {
         animationFrameRef.current = requestAnimationFrame(animate);
+
+        // Apply forces between nodes
+        nodesRef.current.forEach((node) => {
+          const connections = node.userData.connections;
+          const velocity = node.userData.velocity;
+
+          // Spring force for connected nodes
+          connections.forEach((connectedNode: THREE.Mesh) => {
+            const distance = node.position.distanceTo(connectedNode.position);
+            const direction = connectedNode.position.clone().sub(node.position).normalize();
+            const force = direction.multiplyScalar((distance - 30) * 0.03);
+            velocity.add(force);
+          });
+
+          // Spherical constraint force
+          const toCenter = node.position.clone().normalize();
+          const distanceToCenter = node.position.length();
+          const sphereForce = toCenter.multiplyScalar((radius - distanceToCenter) * 0.1);
+          velocity.add(sphereForce);
+
+          // Apply velocity with damping
+          velocity.multiplyScalar(0.95);
+          node.position.add(velocity);
+        });
+
+        // Update lines positions
+        scene.children.forEach(child => {
+          if (child instanceof THREE.Line) {
+            const geometry = child.geometry as THREE.BufferGeometry;
+            const positions = geometry.attributes.position.array;
+            geometry.attributes.position.needsUpdate = true;
+          }
+        });
+
         controls.update();
         renderer.render(scene, camera);
       };
