@@ -1,17 +1,16 @@
 import { Network3DGraph } from "@/components/graph/Network3DGraph";
-import { NetworkThreeGraph } from "@/components/graph/NetworkThreeGraph";
+import { ThreeGraph } from "@/components/graph/ThreeGraph";
 import { GraphSearch } from "@/components/graph/GraphSearch";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useRef, useState, Suspense } from "react";
 import { ForceGraphMethods } from "react-force-graph-3d";
-import { ThreeGraphMethods } from "@/components/graph/NetworkThreeGraph";
+import { ThreeGraphMethods } from "@/components/graph/ThreeGraph";
 import { NetworkNode, processNetworkData } from "@/utils/networkGraphUtils";
 import { Button } from "@/components/ui/button";
-import { Box, Square } from "lucide-react";
+import { Box, Square, Cube } from "lucide-react";
 import { Network2DGraph } from "@/components/graph/Network2DGraph";
 
-// Loading component for the graph
 const GraphLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -21,7 +20,7 @@ const GraphLoader = () => (
 const Network3DPage = () => {
   const forceGraphRef = useRef<ForceGraphMethods>();
   const threeGraphRef = useRef<ThreeGraphMethods>();
-  const [viewMode, setViewMode] = useState<'2d' | '3d' | 'three'>('3d');
+  const [viewMode, setViewMode] = useState<'2d' | '3d' | 'three'>('three');
   
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes'],
@@ -70,7 +69,7 @@ const Network3DPage = () => {
             <Network2DGraph notes={notes} />
           )}
           {viewMode === 'three' && (
-            <NetworkThreeGraph ref={threeGraphRef} notes={notes} />
+            <ThreeGraph ref={threeGraphRef} notes={notes} />
           )}
         </Suspense>
       </div>
@@ -92,7 +91,7 @@ const Network3DPage = () => {
           className="bg-background/80 backdrop-blur-sm"
           onClick={() => setViewMode(viewMode === 'three' ? '3d' : 'three')}
         >
-          <Box className="h-4 w-4" />
+          <Cube className="h-4 w-4" />
         </Button>
       </div>
     </div>
