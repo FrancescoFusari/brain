@@ -20,7 +20,7 @@ const GraphLoader = () => (
 const Network3DPage = () => {
   const forceGraphRef = useRef<ForceGraphMethods>();
   const threeGraphRef = useRef<ThreeGraphMethods>();
-  const [viewMode, setViewMode] = useState<'2d' | '3d' | 'three'>('three');
+  const [viewMode, setViewMode] = useState<'2d' | '3d' | 'three' | 'four'>('three');
   
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes'],
@@ -71,6 +71,9 @@ const Network3DPage = () => {
           {viewMode === 'three' && (
             <ThreeGraph ref={threeGraphRef} notes={notes} />
           )}
+          {viewMode === 'four' && (
+            <ThreeGraph ref={threeGraphRef} notes={notes} />
+          )}
         </Suspense>
       </div>
       <div className="absolute inset-x-0 top-0 z-10">
@@ -92,6 +95,14 @@ const Network3DPage = () => {
           onClick={() => setViewMode(viewMode === 'three' ? '3d' : 'three')}
         >
           <Box className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="bg-background/80 backdrop-blur-sm font-medium"
+          onClick={() => setViewMode(viewMode === 'four' ? '3d' : 'four')}
+        >
+          4
         </Button>
       </div>
     </div>
