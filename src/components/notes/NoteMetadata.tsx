@@ -119,8 +119,8 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
                       {(section.content as string[]).map((item, badgeIndex) => (
                         <Badge 
                           key={badgeIndex} 
-                          variant="secondary"
-                          className="bg-accent/50 hover:bg-accent/70 transition-colors px-3 py-1 text-[#E0E0D7]"
+                          variant="outline"
+                          className="border border-border/20 rounded-lg text-[#E0E0D7] hover:bg-accent/10 transition-colors"
                         >
                           {item}
                         </Badge>
