@@ -1,4 +1,6 @@
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 interface NoteMetadataProps {
   metadata: {
@@ -82,33 +84,52 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
   if (!hasContent) return null;
 
   return (
-    <div className="space-y-4 mb-6 bg-muted p-3 md:p-4 rounded-lg text-sm md:text-base">
-      <h3 className="font-semibold text-base md:text-lg">
-        {inputType === 'image' ? 'Image Analysis' : 'Note Analysis'}
-      </h3>
-      
-      {sections.map((section, index) => {
-        if (!section.content || 
-            (Array.isArray(section.content) && section.content.length === 0) ||
-            (!Array.isArray(section.content) && section.content.trim() === '')) {
-          return null;
-        }
+    <div className="rounded-lg bg-muted/50 backdrop-blur-sm border border-border/5">
+      <div className="p-4 md:p-6">
+        <h3 className="text-lg md:text-xl font-semibold text-foreground/90 mb-4">
+          {inputType === 'image' ? 'Image Analysis' : 'Note Analysis'}
+        </h3>
+        
+        <ScrollArea className="h-full max-h-[600px] pr-4">
+          <div className="space-y-6">
+            {sections.map((section, index) => {
+              if (!section.content || 
+                  (Array.isArray(section.content) && section.content.length === 0) ||
+                  (!Array.isArray(section.content) && section.content.trim() === '')) {
+                return null;
+              }
 
-        return (
-          <div key={index}>
-            <h4 className="font-medium text-xs md:text-sm text-muted-foreground">{section.title}</h4>
-            {section.type === 'badges' ? (
-              <div className="flex flex-wrap gap-2 mt-1">
-                {(section.content as string[]).map((item, badgeIndex) => (
-                  <Badge key={badgeIndex} variant="secondary">{item}</Badge>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-1">{section.content as string}</p>
-            )}
+              return (
+                <div key={index}>
+                  <h4 className="text-sm font-medium text-foreground/70 mb-2">
+                    {section.title}
+                  </h4>
+                  {section.type === 'badges' ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {(section.content as string[]).map((item, badgeIndex) => (
+                        <Badge 
+                          key={badgeIndex} 
+                          variant="secondary"
+                          className="bg-accent/50 hover:bg-accent/70 transition-colors"
+                        >
+                          {item}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-foreground/80 leading-relaxed">
+                      {section.content as string}
+                    </p>
+                  )}
+                  {index < sections.length - 1 && (
+                    <Separator className="my-4 opacity-20" />
+                  )}
+                </div>
+              );
+            })}
           </div>
-        );
-      })}
+        </ScrollArea>
+      </div>
     </div>
   );
 };
