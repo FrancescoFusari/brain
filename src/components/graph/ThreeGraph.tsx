@@ -1,10 +1,11 @@
 import { useRef, useEffect, forwardRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { DragControls } from 'three/examples/jsm/controls/DragControls';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { DragControls } from 'three/addons/controls/DragControls.js';
 import { Note } from '@/types/graph';
 import { processNetworkData } from '@/utils/networkGraphUtils';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 import { createNodeGeometry, createNodeMaterial, createLinkMaterial, setupLights, updateForces } from '@/utils/threeGraphUtils';
 import { useTheme } from 'next-themes';
 
