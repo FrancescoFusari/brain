@@ -13,6 +13,7 @@ import { CategoriesGrid } from "./tags/CategoriesGrid";
 import { TagsGrid } from "./tags/TagsGrid";
 import { saveNotesToOfflineStorage } from "@/utils/offlineStorage";
 import { useToast } from "./ui/use-toast";
+import { Note } from "@/types/note";
 
 const BATCH_SIZE = 12;
 
@@ -64,7 +65,12 @@ const TagViewContent = memo(({ selectedTag, displayedNotes, hasMore, intersectio
 TagViewContent.displayName = "TagViewContent";
 
 // Memoize the overview component
-const TagOverview = memo(({ savedCategories, lifeSections, onTagClick }: any) => {
+const TagOverview = memo(({ savedCategories, lifeSections, onTagClick, sortedTags }: {
+  savedCategories: Record<string, string[]> | null;
+  lifeSections: string[];
+  onTagClick: (tag: string) => void;
+  sortedTags: [string, Note[]][];
+}) => {
   return (
     <div className="space-y-6">
       <TagCategorization />
@@ -161,6 +167,7 @@ export const TagView = () => {
       savedCategories={savedCategories}
       lifeSections={lifeSections}
       onTagClick={handleTagSelect}
+      sortedTags={sortedTags}
     />
   );
 };
