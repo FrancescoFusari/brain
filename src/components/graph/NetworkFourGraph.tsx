@@ -255,12 +255,19 @@ class Network3DGraph {
   }
 
   createLinks() {
+    console.log("Creating links with count:", this.links.length);
+    
+    // Remove existing link system if it exists
+    if (this.linkSystem) {
+      this.scene.remove(this.linkSystem);
+    }
+
     const linkGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(this.links.length * 6);
-    const colors = new Float32Array(this.links.length * 8);
+    const colors = new Float32Array(this.links.length * 6); // Changed from 8 to 6 to match positions
     
     linkGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    linkGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 4));
+    linkGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const linkMaterial = new THREE.LineBasicMaterial({
       vertexColors: true,
@@ -270,16 +277,27 @@ class Network3DGraph {
 
     this.linkSystem = new THREE.LineSegments(linkGeometry, linkMaterial);
     this.scene.add(this.linkSystem);
+    console.log("Link system created:", this.linkSystem);
     this.updateLinks();
   }
 
   updateLinks() {
+    console.log("Updating links");
+    if (!this.linkSystem || !this.linkSystem.geometry) {
+      console.warn("Link system not initialized");
+      return;
+    }
+
     const positions = this.linkSystem.geometry.attributes.position.array;
     const colors = this.linkSystem.geometry.attributes.color.array;
 
     this.links.forEach((link, i) => {
+      if (!link.source?.mesh?.position || !link.target?.mesh?.position) {
+        console.warn("Invalid link source or target:", link);
+        return;
+      }
+
       const baseIndex = i * 6;
-      const colorIndex = i * 8;
       const sourcePos = link.source.mesh.position;
       const targetPos = link.target.mesh.position;
 
@@ -291,8 +309,12 @@ class Network3DGraph {
       positions[baseIndex + 5] = targetPos.z;
 
       const color = new THREE.Color(0x8e9196);
-      color.toArray(colors, colorIndex);
-      color.toArray(colors, colorIndex + 4);
+      colors[baseIndex] = color.r;
+      colors[baseIndex + 1] = color.g;
+      colors[baseIndex + 2] = color.b;
+      colors[baseIndex + 3] = color.r;
+      colors[baseIndex + 4] = color.g;
+      colors[baseIndex + 5] = color.b;
     });
 
     this.linkSystem.geometry.attributes.position.needsUpdate = true;
