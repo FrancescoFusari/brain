@@ -96,12 +96,12 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
         }}
       />
       <div className="p-4 md:p-6">
-        <h3 className="text-lg md:text-xl font-semibold text-foreground/90 mb-4">
+        <h3 className="text-lg md:text-xl font-semibold text-foreground/90 mb-6">
           {inputType === 'image' ? 'Image Analysis' : 'Note Analysis'}
         </h3>
         
-        <ScrollArea className="h-full max-h-[600px] pr-4">
-          <div className="space-y-6">
+        <ScrollArea className="h-full max-h-[600px] pr-6">
+          <div className="space-y-8">
             {sections.map((section, index) => {
               if (!section.content || 
                   (Array.isArray(section.content) && section.content.length === 0) ||
@@ -110,17 +110,17 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
               }
 
               return (
-                <div key={index}>
-                  <h4 className="text-sm font-medium text-foreground/70 mb-2">
+                <div key={index} className="space-y-3">
+                  <h4 className="text-sm font-medium text-foreground/80 mb-3">
                     {section.title}
                   </h4>
                   {section.type === 'badges' ? (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2">
                       {(section.content as string[]).map((item, badgeIndex) => (
                         <Badge 
                           key={badgeIndex} 
                           variant="secondary"
-                          className="bg-accent/50 hover:bg-accent/70 transition-colors"
+                          className="bg-accent/50 hover:bg-accent/70 transition-colors px-3 py-1"
                         >
                           {item}
                         </Badge>
@@ -132,7 +132,7 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
                     </p>
                   )}
                   {index < sections.length - 1 && (
-                    <Separator className="my-4 opacity-20" />
+                    <Separator className="my-6 opacity-20" />
                   )}
                 </div>
               );
