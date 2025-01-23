@@ -67,14 +67,14 @@ TagViewContent.displayName = "TagViewContent";
 // Memoize the overview component
 const TagOverview = memo(({ savedCategories, lifeSections, onTagClick, sortedTags }: {
   savedCategories: Record<string, string[]> | null;
-  lifeSections: string[];
+  lifeSections: Record<string, string[]>;
   onTagClick: (tag: string) => void;
   sortedTags: [string, Note[]][];
 }) => {
   return (
     <div className="space-y-6">
       <TagCategorization />
-      <LifeSections sections={Object.keys(lifeSections)} />
+      <LifeSections sections={lifeSections} />
       {savedCategories && (
         <CategoriesGrid 
           categories={savedCategories} 
