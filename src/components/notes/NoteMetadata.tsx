@@ -120,7 +120,7 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
                         <Badge 
                           key={badgeIndex} 
                           variant="outline"
-                          className="border border-border/20 rounded-lg text-[#E0E0D7] hover:bg-accent/10 transition-colors"
+                          className="border border-border/20 rounded-lg text-[#E0E0D7] hover:bg-accent/10 transition-colors py-1.5"
                         >
                           {item}
                         </Badge>
