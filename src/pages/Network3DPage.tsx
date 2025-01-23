@@ -1,15 +1,16 @@
+import { useRef, useState, Suspense } from "react";
 import { Network3DGraph } from "@/components/graph/Network3DGraph";
 import { ThreeGraph } from "@/components/graph/ThreeGraph";
 import { GraphSearch } from "@/components/graph/GraphSearch";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useRef, useState, Suspense } from "react";
 import { ForceGraphMethods } from "react-force-graph-3d";
-import { ThreeGraphMethods } from "@/components/graph/ThreeGraph";
+import { ThreeGraphMethods } from "@/components/graph/NetworkThreeGraph";
 import { NetworkNode, processNetworkData } from "@/utils/networkGraphUtils";
 import { Button } from "@/components/ui/button";
 import { Box, Square } from "lucide-react";
 import { Network2DGraph } from "@/components/graph/Network2DGraph";
+import { NetworkFourGraph } from "@/components/graph/NetworkFourGraph";
 
 const GraphLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -20,6 +21,7 @@ const GraphLoader = () => (
 const Network3DPage = () => {
   const forceGraphRef = useRef<ForceGraphMethods>();
   const threeGraphRef = useRef<ThreeGraphMethods>();
+  const fourGraphRef = useRef<ThreeGraphMethods>();
   const [viewMode, setViewMode] = useState<'2d' | '3d' | 'three' | 'four'>('three');
   
   const { data: notes = [], isLoading } = useQuery({
@@ -72,7 +74,7 @@ const Network3DPage = () => {
             <ThreeGraph ref={threeGraphRef} notes={notes} />
           )}
           {viewMode === 'four' && (
-            <ThreeGraph ref={threeGraphRef} notes={notes} />
+            <NetworkFourGraph ref={fourGraphRef} notes={notes} />
           )}
         </Suspense>
       </div>
