@@ -178,13 +178,13 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
   };
 
   return (
-    <div className="space-y-6 max-w-full overflow-hidden">
-      <div className="flex items-center justify-between gap-4 px-4">
-        <Button variant="ghost" onClick={() => navigate('/')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Notes
+    <div className="space-y-4 w-full overflow-hidden">
+      <div className="flex items-center justify-between gap-2 px-2 sm:px-4">
+        <Button variant="ghost" onClick={() => navigate('/')} className="text-sm">
+          <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
+          Back
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button 
             variant="outline" 
             size="icon"
@@ -203,8 +203,8 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
         </div>
       </div>
 
-      <Card className="max-w-full overflow-hidden">
-        <CardHeader>
+      <Card className="w-full overflow-hidden">
+        <CardHeader className="px-3 sm:px-6">
           <NoteHeader
             category={note.category}
             inputType={note.input_type}
@@ -214,7 +214,7 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
           />
         </CardHeader>
         
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 px-3 sm:px-6">
           {imageUrl && (
             <div className="mb-6">
               <img 
@@ -226,12 +226,12 @@ export const NoteDetail = ({ note }: NoteDetailProps) => {
           )}
           
           {note.source_url && note.input_type === 'url' && (
-            <div className="mb-4 px-4">
+            <div className="mb-4">
               <a 
                 href={note.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline flex items-center gap-2 break-all"
+                className="text-primary hover:underline flex items-center gap-2 break-all text-sm"
               >
                 <Link2Icon className="h-4 w-4 flex-shrink-0" />
                 {note.source_url}

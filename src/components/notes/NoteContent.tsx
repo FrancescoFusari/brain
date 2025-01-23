@@ -38,8 +38,8 @@ export const NoteContent = ({
     : content;
 
   return (
-    <div className="whitespace-pre-wrap mb-4 text-sm md:text-base leading-relaxed break-words w-full overflow-hidden">
-      <div className="max-w-full md:max-w-[65ch] mx-auto px-4">
+    <div className="whitespace-pre-wrap text-sm md:text-base leading-relaxed break-words w-full overflow-hidden">
+      <div className="max-w-full mx-auto">
         {isEditing ? (
           <div className="space-y-2">
             <Textarea
@@ -51,10 +51,11 @@ export const NoteContent = ({
               <Button
                 variant="outline"
                 onClick={onCancel}
+                size="sm"
               >
                 Cancel
               </Button>
-              <Button onClick={onSave}>
+              <Button onClick={onSave} size="sm">
                 Save Changes
               </Button>
             </div>
@@ -72,6 +73,7 @@ export const NoteContent = ({
                   variant="outline"
                   onClick={() => setIsExpanded(!isExpanded)}
                   className="flex items-center gap-1"
+                  size="sm"
                 >
                   {isExpanded ? (
                     <>
@@ -89,6 +91,7 @@ export const NoteContent = ({
               <Button
                 variant="outline"
                 onClick={onEdit}
+                size="sm"
               >
                 Edit Note
               </Button>
