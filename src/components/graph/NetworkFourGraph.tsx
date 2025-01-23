@@ -3,7 +3,6 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-import { Octree } from 'three/addons/math/Octree.js';
 import { Note } from '@/types/graph';
 import { processNetworkData } from '@/utils/networkGraphUtils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -100,7 +99,7 @@ class Network3DGraph {
   #mouse = new THREE.Vector2();
   #frameId: number | null = null;
   #physicsEnabled = true;
-  #octree = new Octree();
+  nodePositions: Map<string, THREE.Vector3> = new Map();
 
   constructor(container: HTMLDivElement, notes: Note[], savedCategories: any, lifeSections: any, isMobile: boolean) {
     this.container = container;
@@ -132,7 +131,7 @@ class Network3DGraph {
     // Initialize the rest
     this.initLights();
     this.initEventListeners();
-    this.loadResources(() => {
+    this.loadResources().then(() => {
       this.processData(notes, savedCategories, lifeSections);
       this.initGraph();
       this.startAnimation();
@@ -158,24 +157,22 @@ class Network3DGraph {
     this.renderer.domElement.addEventListener('mouseup', this.handleMouseUp.bind(this));
   }
 
-  loadResources(callback) {
+  async loadResources() {
     try {
       const loader = new FontLoader();
       this.font = await loader.loadAsync('https://cdn.jsdelivr.net/npm/three@0.132.2/examples/fonts/helvetiker_regular.typeface.json');
-      callback();
     } catch (error) {
       console.error('Failed to load resources:', error);
     }
   }
 
-  processData(notes, savedCategories, lifeSections) {
+  processData(notes: Note[], savedCategories: any, lifeSections: any) {
     const graphData = processNetworkData(notes, savedCategories, lifeSections);
     this.nodes = graphData.nodes;
     this.links = graphData.links;
   }
 
   initGraph() {
-    this.#octree.fromGraphNodes(this.nodes);
     this.createNodes();
     this.createLinks();
     this.initPhysics();
@@ -206,7 +203,7 @@ class Network3DGraph {
 
       node.mesh = mesh;
       this.scene.add(mesh);
-      this.#octree.addNode(node);
+      this.nodePositions.set(node.id, mesh.position.clone());
 
       if (this.shouldAddLabel(node)) {
         this.createTextLabel(node);
@@ -293,14 +290,12 @@ class Network3DGraph {
     this.nodes.forEach(node => {
       node.velocity = new THREE.Vector3();
       node.force = new THREE.Vector3();
+      this.nodePositions.set(node.id, node.mesh.position.clone());
     });
   }
 
   updatePhysics() {
     if (!this.#physicsEnabled) return;
-
-    // Spatial partitioning for efficient collision detection
-    this.#octree.update();
 
     for (let iter = 0; iter < this.physicsParams.iterations; iter++) {
       this.applyForces();
@@ -312,30 +307,28 @@ class Network3DGraph {
   }
 
   applyForces() {
-    // Charge forces using octree for spatial partitioning
     this.nodes.forEach(node => {
       if (node.fixed) return;
       
-      this.#octree.queryRadius(node.mesh.position, 100, nearbyNodes => {
-        nearbyNodes.forEach(other => {
-          if (node === other) return;
-          
-          const delta = new THREE.Vector3().subVectors(
-            other.mesh.position,
-            node.mesh.position
-          );
-          
-          const distanceSq = delta.lengthSq();
-          if (distanceSq < 1e-6) return;
-          
-          const force = this.physicsParams.chargeForce / distanceSq;
-          delta.multiplyScalar(force);
-          node.force.sub(delta);
-        });
+      // Apply repulsive forces
+      this.nodes.forEach(other => {
+        if (node === other) return;
+        
+        const delta = new THREE.Vector3().subVectors(
+          other.mesh.position,
+          node.mesh.position
+        );
+        
+        const distanceSq = delta.lengthSq();
+        if (distanceSq < 1e-6) return;
+        
+        const force = this.physicsParams.chargeForce / distanceSq;
+        delta.multiplyScalar(force);
+        node.force.sub(delta);
       });
     });
 
-    // Link forces
+    // Apply link forces
     this.links.forEach(link => {
       const delta = new THREE.Vector3().subVectors(
         link.target.mesh.position,
@@ -358,24 +351,22 @@ class Network3DGraph {
     this.nodes.forEach(node => {
       if (node.fixed) return;
 
-      this.#octree.queryRadius(node.mesh.position, this.getCollisionRadius(node.type), collisions => {
-        collisions.forEach(other => {
-          if (node === other) return;
+      this.nodes.forEach(other => {
+        if (node === other) return;
 
-          const delta = new THREE.Vector3().subVectors(
-            other.mesh.position,
-            node.mesh.position
-          );
-          
-          const distance = delta.length();
-          const minDist = this.getCollisionRadius(node.type) + this.getCollisionRadius(other.type);
-          
-          if (distance < minDist) {
-            const correction = delta.normalize().multiplyScalar((minDist - distance) * 0.5);
-            node.mesh.position.sub(correction);
-            other.mesh.position.add(correction);
-          }
-        });
+        const delta = new THREE.Vector3().subVectors(
+          other.mesh.position,
+          node.mesh.position
+        );
+        
+        const distance = delta.length();
+        const minDist = this.getCollisionRadii()[node.type] + this.getCollisionRadii()[other.type];
+        
+        if (distance < minDist) {
+          const correction = delta.normalize().multiplyScalar((minDist - distance) * 0.5);
+          node.mesh.position.sub(correction);
+          other.mesh.position.add(correction);
+        }
       });
     });
   }
@@ -402,7 +393,7 @@ class Network3DGraph {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  handleMouseDown(event) {
+  handleMouseDown(event: MouseEvent) {
     this.#mouse.set(
       (event.clientX / window.innerWidth) * 2 - 1,
       -(event.clientY / window.innerHeight) * 2 + 1
@@ -412,13 +403,16 @@ class Network3DGraph {
     const intersects = this.#raycaster.intersectObjects(this.nodes.map(n => n.mesh));
 
     if (intersects.length > 0) {
-      this.draggedNode = intersects[0].object.nodeRef;
-      this.draggedNode.fixed = true;
-      this.controls.enabled = false;
+      const intersectedMesh = intersects[0].object;
+      this.draggedNode = this.nodes.find(n => n.mesh === intersectedMesh);
+      if (this.draggedNode) {
+        this.draggedNode.fixed = true;
+        this.controls.enabled = false;
+      }
     }
   }
 
-  handleMouseMove(event) {
+  handleMouseMove(event: MouseEvent) {
     if (!this.draggedNode) return;
 
     this.#mouse.set(
