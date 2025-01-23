@@ -8,7 +8,7 @@ import { ForceGraphMethods } from "react-force-graph-3d";
 import { ThreeGraphMethods } from "@/components/graph/NetworkThreeGraph";
 import { NetworkNode, processNetworkData } from "@/utils/networkGraphUtils";
 import { Button } from "@/components/ui/button";
-import { Box, Square, Cube } from "lucide-react";
+import { Box, Square } from "lucide-react";
 import { Network2DGraph } from "@/components/graph/Network2DGraph";
 
 // Loading component for the graph
@@ -92,7 +92,7 @@ const Network3DPage = () => {
           className="bg-background/80 backdrop-blur-sm"
           onClick={() => setViewMode(viewMode === 'three' ? '3d' : 'three')}
         >
-          <Cube className="h-4 w-4" />
+          <Box className="h-4 w-4" />
         </Button>
       </div>
     </div>
