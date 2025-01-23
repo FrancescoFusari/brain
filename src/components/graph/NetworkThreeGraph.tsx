@@ -1,6 +1,7 @@
 import { useRef, useEffect, forwardRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { DragControls } from 'three/addons/controls/DragControls.js';
 import { Note } from '@/types/graph';
 import { processNetworkData } from '@/utils/networkGraphUtils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -22,8 +23,10 @@ export const NetworkThreeGraph = forwardRef<ThreeGraphMethods, NetworkThreeGraph
     const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
     const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
     const controlsRef = useRef<OrbitControls | null>(null);
+    const dragControlsRef = useRef<DragControls | null>(null);
     const nodesRef = useRef<Map<string, THREE.Mesh>>(new Map());
     const animationFrameRef = useRef<number>();
+    const isDraggingRef = useRef(false);
     const isMobile = useIsMobile();
 
     useEffect(() => {
@@ -60,7 +63,6 @@ export const NetworkThreeGraph = forwardRef<ThreeGraphMethods, NetworkThreeGraph
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
       scene.add(ambientLight);
 
-      // Add multiple point lights for better illumination
       const pointLight1 = new THREE.PointLight(0xffffff, 1);
       pointLight1.position.set(100, 100, 100);
       scene.add(pointLight1);
@@ -75,7 +77,8 @@ export const NetworkThreeGraph = forwardRef<ThreeGraphMethods, NetworkThreeGraph
 
       // Process graph data
       const { nodes, links } = processNetworkData(notes);
-      const radius = 100; // Radius of the sphere
+      const radius = 100;
+      const nodeMeshes: THREE.Mesh[] = [];
 
       // Create nodes with spherical distribution
       nodes.forEach((node, index) => {
@@ -97,20 +100,34 @@ export const NetworkThreeGraph = forwardRef<ThreeGraphMethods, NetworkThreeGraph
         
         const mesh = new THREE.Mesh(geometry, material);
         
-        // Position on sphere surface
         mesh.position.x = radius * Math.sin(phi) * Math.cos(theta);
         mesh.position.y = radius * Math.sin(phi) * Math.sin(theta);
         mesh.position.z = radius * Math.cos(phi);
         
-        // Add velocity for force simulation
         mesh.userData.velocity = new THREE.Vector3();
         mesh.userData.connections = [];
+        mesh.userData.nodeId = node.id;
         
         scene.add(mesh);
         nodesRef.current.set(node.id, mesh);
+        nodeMeshes.push(mesh);
       });
 
-      // Create links with curved lines
+      // Setup drag controls
+      const dragControls = new DragControls(nodeMeshes, camera, renderer.domElement);
+      dragControlsRef.current = dragControls;
+
+      dragControls.addEventListener('dragstart', () => {
+        isDraggingRef.current = true;
+        controls.enabled = false;
+      });
+
+      dragControls.addEventListener('dragend', () => {
+        isDraggingRef.current = false;
+        controls.enabled = true;
+      });
+
+      // Create links
       links.forEach(link => {
         const sourceNode = nodesRef.current.get(link.source);
         const targetNode = nodesRef.current.get(link.target);
@@ -127,7 +144,6 @@ export const NetworkThreeGraph = forwardRef<ThreeGraphMethods, NetworkThreeGraph
           const line = new THREE.Line(geometry, material);
           scene.add(line);
 
-          // Store connection for force calculation
           sourceNode.userData.connections.push(targetNode);
           targetNode.userData.connections.push(sourceNode);
         }
@@ -137,29 +153,31 @@ export const NetworkThreeGraph = forwardRef<ThreeGraphMethods, NetworkThreeGraph
       const animate = () => {
         animationFrameRef.current = requestAnimationFrame(animate);
 
-        // Apply forces between nodes
-        nodesRef.current.forEach((node) => {
-          const connections = node.userData.connections;
-          const velocity = node.userData.velocity;
+        if (!isDraggingRef.current) {
+          // Apply forces between nodes
+          nodesRef.current.forEach((node) => {
+            const connections = node.userData.connections;
+            const velocity = node.userData.velocity;
 
-          // Spring force for connected nodes
-          connections.forEach((connectedNode: THREE.Mesh) => {
-            const distance = node.position.distanceTo(connectedNode.position);
-            const direction = connectedNode.position.clone().sub(node.position).normalize();
-            const force = direction.multiplyScalar((distance - 30) * 0.03);
-            velocity.add(force);
+            // Spring force for connected nodes
+            connections.forEach((connectedNode: THREE.Mesh) => {
+              const distance = node.position.distanceTo(connectedNode.position);
+              const direction = connectedNode.position.clone().sub(node.position).normalize();
+              const force = direction.multiplyScalar((distance - 30) * 0.03);
+              velocity.add(force);
+            });
+
+            // Spherical constraint force (weaker now to allow more movement)
+            const toCenter = node.position.clone().normalize();
+            const distanceToCenter = node.position.length();
+            const sphereForce = toCenter.multiplyScalar((radius - distanceToCenter) * 0.05);
+            velocity.add(sphereForce);
+
+            // Apply velocity with damping
+            velocity.multiplyScalar(0.98);
+            node.position.add(velocity);
           });
-
-          // Spherical constraint force
-          const toCenter = node.position.clone().normalize();
-          const distanceToCenter = node.position.length();
-          const sphereForce = toCenter.multiplyScalar((radius - distanceToCenter) * 0.1);
-          velocity.add(sphereForce);
-
-          // Apply velocity with damping
-          velocity.multiplyScalar(0.95);
-          node.position.add(velocity);
-        });
+        }
 
         // Update lines positions
         scene.children.forEach(child => {
