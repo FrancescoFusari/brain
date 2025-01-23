@@ -17,6 +17,15 @@ export interface FourGraphMethods {
   focusNode: (nodeId: string) => void;
 }
 
+interface PhysicsParams {
+  linkDistance: number;
+  chargeForce: number;
+  centerForce: number;
+  collisionRadius: Record<string, number>;
+  damping: number;
+  iterations: number;
+}
+
 export const NetworkFourGraph = forwardRef<FourGraphMethods, NetworkFourGraphProps>(
   ({ notes }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -82,15 +91,6 @@ export const NetworkFourGraph = forwardRef<FourGraphMethods, NetworkFourGraphPro
 
 NetworkFourGraph.displayName = "NetworkFourGraph";
 
-interface PhysicsParams {
-  linkDistance: number;
-  chargeForce: number;
-  centerForce: number;
-  collisionRadius: Record<string, number>;
-  damping: number;
-  iterations: number;
-}
-
 class Network3DGraph {
   container: HTMLDivElement;
   isMobile: boolean;
@@ -111,6 +111,7 @@ class Network3DGraph {
   nodePositions: Map<string, THREE.Vector3> = new Map();
 
   constructor(container: HTMLDivElement, notes: Note[], savedCategories: any, lifeSections: any, isMobile: boolean) {
+    console.log("Constructing Network3DGraph");
     this.container = container;
     this.isMobile = isMobile;
     this.nodes = [];
@@ -151,6 +152,7 @@ class Network3DGraph {
     this.initLights();
     this.initEventListeners();
     this.loadResources(() => {
+      console.log("Resources loaded, processing data");
       this.processData(notes, savedCategories, lifeSections);
       this.initGraph();
       this.startAnimation();
@@ -182,6 +184,7 @@ class Network3DGraph {
 
   async loadResources(callback: () => void) {
     try {
+      console.log("Loading font resources");
       const loader = new FontLoader();
       this.font = await loader.loadAsync('https://cdn.jsdelivr.net/npm/three@0.132.2/examples/fonts/helvetiker_regular.typeface.json');
       callback();
@@ -191,15 +194,10 @@ class Network3DGraph {
   }
 
   processData(notes: Note[], savedCategories: any, lifeSections: any) {
+    console.log("Processing graph data");
     const graphData = processNetworkData(notes, savedCategories, lifeSections);
     this.nodes = graphData.nodes;
     this.links = graphData.links;
-  }
-
-  initGraph() {
-    this.createNodes();
-    this.createLinks();
-    this.initPhysics();
   }
 
   createNodes() {
@@ -302,6 +300,7 @@ class Network3DGraph {
   }
 
   initPhysics() {
+    console.log("Initializing physics");
     this.nodes.forEach(node => {
       node.velocity = new THREE.Vector3();
       node.force = new THREE.Vector3();
@@ -453,6 +452,7 @@ class Network3DGraph {
   }
 
   startAnimation() {
+    console.log("Starting animation");
     if (!this.#frameId) {
       const animate = () => {
         this.#frameId = requestAnimationFrame(animate);
