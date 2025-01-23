@@ -74,7 +74,7 @@ const TagOverview = memo(({ savedCategories, lifeSections, onTagClick, sortedTag
   return (
     <div className="space-y-6">
       <TagCategorization />
-      <LifeSections sections={lifeSections} />
+      <LifeSections sections={Object.keys(lifeSections)} />
       {savedCategories && (
         <CategoriesGrid 
           categories={savedCategories} 
