@@ -85,7 +85,7 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
   if (!hasContent) return null;
 
   return (
-    <div className="relative rounded-lg bg-muted/50 backdrop-blur-sm border border-border/5">
+    <div className="relative rounded-sm bg-muted/50 backdrop-blur-sm border border-border/5">
       <BorderTrail 
         className="bg-gradient-to-l from-primary/30 via-primary/50 to-primary/30"
         size={120}
@@ -95,13 +95,13 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
           repeat: Infinity,
         }}
       />
-      <div className="p-4 md:p-6">
-        <h3 className="text-lg md:text-xl font-semibold text-foreground/90 mb-4">
+      <div className="p-8 md:p-10">
+        <h3 className="text-lg md:text-xl font-semibold text-[#E0E0D7] mb-8">
           {inputType === 'image' ? 'Image Analysis' : 'Note Analysis'}
         </h3>
         
-        <ScrollArea className="h-full max-h-[600px] pr-4">
-          <div className="space-y-6">
+        <ScrollArea className="h-full max-h-[600px] pr-8">
+          <div className="space-y-8">
             {sections.map((section, index) => {
               if (!section.content || 
                   (Array.isArray(section.content) && section.content.length === 0) ||
@@ -110,29 +110,29 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
               }
 
               return (
-                <div key={index}>
-                  <h4 className="text-sm font-medium text-foreground/70 mb-2">
+                <div key={index} className="px-2">
+                  <h4 className="text-sm font-medium text-[#E0E0D7] mb-4">
                     {section.title}
                   </h4>
                   {section.type === 'badges' ? (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2.5">
                       {(section.content as string[]).map((item, badgeIndex) => (
                         <Badge 
                           key={badgeIndex} 
                           variant="secondary"
-                          className="bg-accent/50 hover:bg-accent/70 transition-colors"
+                          className="bg-accent/50 hover:bg-accent/70 transition-colors px-4 py-1.5"
                         >
                           {item}
                         </Badge>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-foreground/80 leading-relaxed">
+                    <p className="text-sm text-[#E0E0D7] leading-relaxed">
                       {section.content as string}
                     </p>
                   )}
                   {index < sections.length - 1 && (
-                    <Separator className="my-4 opacity-20" />
+                    <Separator className="my-8 opacity-20" />
                   )}
                 </div>
               );
