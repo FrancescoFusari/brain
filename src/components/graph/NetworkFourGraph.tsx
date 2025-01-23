@@ -83,40 +83,36 @@ export const NetworkFourGraph = forwardRef<FourGraphMethods, NetworkFourGraphPro
 
 NetworkFourGraph.displayName = "NetworkFourGraph";
 
-// Network3DGraph class implementation
 class Network3DGraph {
+  container: HTMLDivElement;
+  isMobile: boolean;
+  nodes: any[];
+  links: any[];
+  draggedNode: any;
+  scene: THREE.Scene;
+  camera: THREE.PerspectiveCamera;
+  renderer: THREE.WebGLRenderer;
+  controls: OrbitControls;
+  font: any;
+  linkSystem: THREE.LineSegments;
+  physicsParams: any;
   #raycaster = new THREE.Raycaster();
   #mouse = new THREE.Vector2();
-  #frameId = null;
+  #frameId: number | null = null;
   #physicsEnabled = true;
   #octree = new Octree();
 
-  constructor(container, notes, savedCategories, lifeSections, isMobile) {
+  constructor(container: HTMLDivElement, notes: Note[], savedCategories: any, lifeSections: any, isMobile: boolean) {
     this.container = container;
     this.isMobile = isMobile;
     this.nodes = [];
     this.links = [];
     this.draggedNode = null;
 
-    this.initThree();
-    this.initEventListeners();
-    this.loadResources(() => {
-      this.processData(notes, savedCategories, lifeSections);
-      this.initGraph();
-      this.startAnimation();
-    });
-  }
-
-  initThree() {
-    // Scene setup
+    // Initialize scene, camera, and renderer first
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x1b1b1f);
-
-    // Camera setup
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    this.resetCamera();
-
-    // Renderer setup
     this.renderer = new THREE.WebGLRenderer({
       antialias: !this.isMobile,
       powerPreference: 'high-performance'
@@ -125,9 +121,25 @@ class Network3DGraph {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.container.appendChild(this.renderer.domElement);
 
-    // Lighting
+    // Initialize controls before calling resetCamera
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.05;
+
+    // Now it's safe to call resetCamera
+    this.resetCamera();
+
+    // Initialize the rest
     this.initLights();
-    this.initControls();
+    this.initEventListeners();
+    this.loadResources(() => {
+      this.processData(notes, savedCategories, lifeSections);
+      this.initGraph();
+      this.startAnimation();
+    });
+
+    // Add controls change listener after everything is set up
+    this.controls.addEventListener('change', () => this.#physicsEnabled && this.updatePhysics());
   }
 
   initLights() {
@@ -139,14 +151,14 @@ class Network3DGraph {
     this.scene.add(directionalLight);
   }
 
-  initControls() {
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.05;
-    this.controls.addEventListener('change', () => this.#physicsEnabled && this.updatePhysics());
+  initEventListeners() {
+    window.addEventListener('resize', this.handleResize.bind(this));
+    this.renderer.domElement.addEventListener('mousedown', this.handleMouseDown.bind(this));
+    this.renderer.domElement.addEventListener('mousemove', this.handleMouseMove.bind(this));
+    this.renderer.domElement.addEventListener('mouseup', this.handleMouseUp.bind(this));
   }
 
-  async loadResources(callback) {
+  loadResources(callback) {
     try {
       const loader = new FontLoader();
       this.font = await loader.loadAsync('https://cdn.jsdelivr.net/npm/three@0.132.2/examples/fonts/helvetiker_regular.typeface.json');
@@ -384,14 +396,6 @@ class Network3DGraph {
     });
   }
 
-  // Event Handlers
-  initEventListeners() {
-    window.addEventListener('resize', this.handleResize.bind(this));
-    this.renderer.domElement.addEventListener('mousedown', this.handleMouseDown.bind(this));
-    this.renderer.domElement.addEventListener('mousemove', this.handleMouseMove.bind(this));
-    this.renderer.domElement.addEventListener('mouseup', this.handleMouseUp.bind(this));
-  }
-
   handleResize() {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
@@ -439,7 +443,6 @@ class Network3DGraph {
     }
   }
 
-  // Public Methods
   startAnimation() {
     if (!this.#frameId) {
       const animate = () => {
@@ -460,15 +463,16 @@ class Network3DGraph {
   resetCamera(position = { x: 0, y: 0, z: 200 }, lookAt = { x: 0, y: 0, z: 0 }) {
     this.camera.position.set(position.x, position.y, position.z);
     this.camera.lookAt(lookAt.x, lookAt.y, lookAt.z);
-    this.controls.target.set(lookAt.x, lookAt.y, lookAt.z);
-    this.controls.update();
+    if (this.controls) {
+      this.controls.target.set(lookAt.x, lookAt.y, lookAt.z);
+      this.controls.update();
+    }
   }
 
   togglePhysics(enabled) {
     this.#physicsEnabled = enabled;
   }
 
-  // Helper Methods
   getNodeColor(type) {
     const colors = {
       section: 0x9333ea,
