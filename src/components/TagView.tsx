@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,10 +11,81 @@ import { TagCategorization } from "./tags/TagCategorization";
 import { LifeSections } from "./tags/LifeSections";
 import { CategoriesGrid } from "./tags/CategoriesGrid";
 import { TagsGrid } from "./tags/TagsGrid";
-import { saveNotesToOfflineStorage, getOfflineNotes } from "@/utils/offlineStorage";
+import { saveNotesToOfflineStorage } from "@/utils/offlineStorage";
 import { useToast } from "./ui/use-toast";
 
 const BATCH_SIZE = 12;
+
+// Memoize the main content component
+const TagViewContent = memo(({ selectedTag, displayedNotes, hasMore, intersectionRef }: any) => {
+  const navigate = useNavigate();
+
+  if (!selectedTag) return null;
+
+  return (
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex items-center gap-4">
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate('/')}
+          className="text-sm text-muted-foreground hover:text-primary"
+        >
+          ← Back to all tags
+        </Button>
+        <Badge variant="outline" className="text-sm text-secondary">
+          {selectedTag} ({displayedNotes.length})
+        </Badge>
+      </div>
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {displayedNotes.map(note => (
+          <NoteCard
+            key={note.id}
+            title={note.content.split('\n')[0]}
+            content={note.content}
+            onClick={() => navigate(`/note/${note.id}`)}
+          />
+        ))}
+      </div>
+      
+      {hasMore && (
+        <div 
+          ref={intersectionRef}
+          className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mt-4"
+        >
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-[200px] w-full" />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+TagViewContent.displayName = "TagViewContent";
+
+// Memoize the overview component
+const TagOverview = memo(({ savedCategories, lifeSections, onTagClick }: any) => {
+  return (
+    <div className="space-y-6">
+      <TagCategorization />
+      <LifeSections sections={lifeSections} />
+      {savedCategories && (
+        <CategoriesGrid 
+          categories={savedCategories} 
+          onTagClick={onTagClick} 
+        />
+      )}
+      {(!savedCategories || Object.keys(savedCategories).length === 0) && (
+        <TagsGrid 
+          tags={sortedTags} 
+          onTagClick={onTagClick} 
+        />
+      )}
+    </div>
+  );
+});
+
+TagOverview.displayName = "TagOverview";
 
 export const TagView = () => {
   const navigate = useNavigate();
@@ -49,8 +120,15 @@ export const TagView = () => {
     }
   }, [notes, toast]);
 
+  const handleTagSelect = useCallback((tag: string) => {
+    const tagNotes = tagMap.get(tag) || [];
+    setSelectedTag(tag);
+    setDisplayedNotes(tagNotes.slice(0, BATCH_SIZE));
+    setHasMore(tagNotes.length > BATCH_SIZE);
+  }, [tagMap]);
+
   const loadMoreNotes = useCallback(() => {
-    if (!selectedTag) return;
+    if (!selectedTag || !hasMore) return;
     
     const tagNotes = tagMap.get(selectedTag) || [];
     const currentLength = displayedNotes.length;
@@ -58,14 +136,7 @@ export const TagView = () => {
     
     setDisplayedNotes(nextBatch);
     setHasMore(nextBatch.length < tagNotes.length);
-  }, [selectedTag, tagMap, displayedNotes.length]);
-
-  const handleTagSelect = useCallback((tag: string) => {
-    const tagNotes = tagMap.get(tag) || [];
-    setSelectedTag(tag);
-    setDisplayedNotes(tagNotes.slice(0, BATCH_SIZE));
-    setHasMore(tagNotes.length > BATCH_SIZE);
-  }, [tagMap]);
+  }, [selectedTag, tagMap, displayedNotes.length, hasMore]);
 
   // Load more notes when scrolling to the bottom
   useEffect(() => {
@@ -76,60 +147,20 @@ export const TagView = () => {
 
   if (selectedTag) {
     return (
-      <div className="space-y-4 md:space-y-6">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => setSelectedTag(null)}
-            className="text-sm text-muted-foreground hover:text-primary"
-          >
-            ← Back to all tags
-          </Button>
-          <Badge variant="outline" className="text-sm text-secondary">
-            {selectedTag} ({tagMap.get(selectedTag)?.length || 0})
-          </Badge>
-        </div>
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {displayedNotes.map(note => (
-            <NoteCard
-              key={note.id}
-              title={note.content.split('\n')[0]}
-              content={note.content}
-              onClick={() => navigate(`/note/${note.id}`)}
-            />
-          ))}
-        </div>
-        
-        {hasMore && (
-          <div 
-            ref={intersectionRef}
-            className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mt-4"
-          >
-            {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-[200px] w-full" />
-            ))}
-          </div>
-        )}
-      </div>
+      <TagViewContent 
+        selectedTag={selectedTag}
+        displayedNotes={displayedNotes}
+        hasMore={hasMore}
+        intersectionRef={intersectionRef}
+      />
     );
   }
 
   return (
-    <div className="space-y-6">
-      <TagCategorization />
-      <LifeSections sections={lifeSections} />
-      {savedCategories && (
-        <CategoriesGrid 
-          categories={savedCategories} 
-          onTagClick={handleTagSelect} 
-        />
-      )}
-      {(!savedCategories || Object.keys(savedCategories).length === 0) && (
-        <TagsGrid 
-          tags={sortedTags} 
-          onTagClick={handleTagSelect} 
-        />
-      )}
-    </div>
+    <TagOverview
+      savedCategories={savedCategories}
+      lifeSections={lifeSections}
+      onTagClick={handleTagSelect}
+    />
   );
 };

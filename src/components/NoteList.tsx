@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { NoteCard } from "./NoteCard";
 import { useInView } from "react-intersection-observer";
 import { Skeleton } from "./ui/skeleton";
@@ -18,7 +18,7 @@ interface NoteListProps {
   notes: Note[];
 }
 
-const BATCH_SIZE = 12; // Number of notes to load at once
+const BATCH_SIZE = 12;
 
 export const NoteList = ({ notes }: NoteListProps) => {
   const [displayedNotes, setDisplayedNotes] = useState<Note[]>([]);
@@ -30,39 +30,43 @@ export const NoteList = ({ notes }: NoteListProps) => {
     delay: 100,
   });
 
-  // Sort notes by creation date (newest first) only once when notes prop changes
-  useEffect(() => {
-    if (!notes || notes.length === 0) return;
-    
-    const sortedNotes = [...notes].sort((a, b) => 
+  // Memoize sorted notes
+  const sortedNotes = useMemo(() => {
+    if (!notes || notes.length === 0) return [];
+    return [...notes].sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-    
-    // Initialize with first batch
+  }, [notes]);
+
+  // Initialize with first batch
+  useEffect(() => {
+    if (!sortedNotes.length) return;
     setDisplayedNotes(sortedNotes.slice(0, BATCH_SIZE));
     setHasMore(sortedNotes.length > BATCH_SIZE);
     loadingRef.current = false;
-  }, [notes]);
+  }, [sortedNotes]);
+
+  // Memoize load more callback
+  const loadMore = useCallback(() => {
+    if (!hasMore || loadingRef.current) return;
+    
+    loadingRef.current = true;
+    setTimeout(() => {
+      setDisplayedNotes(prev => {
+        const nextBatch = sortedNotes.slice(0, prev.length + BATCH_SIZE);
+        setHasMore(nextBatch.length < sortedNotes.length);
+        loadingRef.current = false;
+        return nextBatch;
+      });
+    }, 300);
+  }, [hasMore, sortedNotes]);
 
   // Load more notes when scrolling to the bottom
   useEffect(() => {
-    if (inView && hasMore && !loadingRef.current) {
-      loadingRef.current = true;
-      
-      // Simulate delay to prevent rapid loading
-      setTimeout(() => {
-        setDisplayedNotes(prev => {
-          const nextBatch = notes
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-            .slice(0, prev.length + BATCH_SIZE);
-          
-          setHasMore(nextBatch.length < notes.length);
-          loadingRef.current = false;
-          return nextBatch;
-        });
-      }, 300);
+    if (inView) {
+      loadMore();
     }
-  }, [inView, hasMore, notes]);
+  }, [inView, loadMore]);
 
   if (!notes || notes.length === 0) {
     return (
@@ -87,7 +91,6 @@ export const NoteList = ({ notes }: NoteListProps) => {
         ))}
       </div>
       
-      {/* Loading indicator */}
       {hasMore && (
         <div 
           ref={intersectionRef}

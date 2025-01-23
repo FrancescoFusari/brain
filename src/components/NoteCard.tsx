@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import { Card, CardHeader } from "@/components/ui/card";
 import { CalendarIcon } from "@radix-ui/react-icons";
 import { Link2Icon, ImageIcon, MailIcon, TextIcon } from "lucide-react";
@@ -20,14 +20,19 @@ interface NoteCardProps {
 export const NoteCard = memo(({ note }: NoteCardProps) => {
   const navigate = useNavigate();
   
-  // Get first 18 words of content
+  // Memoize content truncation
   const truncatedContent = note.content
     .split(' ')
     .slice(0, 18)
     .join(' ') + (note.content.split(' ').length > 18 ? '...' : '');
 
-  // Use first tag as title, or first line of content if no tags
+  // Memoize title generation
   const title = note.tags[0] || note.content.split('\n')[0].substring(0, 50) + (note.content.length > 50 ? '...' : '');
+
+  // Memoize navigation callback
+  const handleNavigate = useCallback(() => {
+    navigate(`/note/${note.id}`);
+  }, [navigate, note.id]);
 
   const getTypeIcon = (type?: string) => {
     switch (type?.toLowerCase()) {
@@ -58,7 +63,7 @@ export const NoteCard = memo(({ note }: NoteCardProps) => {
   return (
     <Card 
       className="note-card cursor-pointer hover:bg-accent transition-colors"
-      onClick={() => navigate(`/note/${note.id}`)}
+      onClick={handleNavigate}
     >
       <CardHeader className="flex flex-col space-y-2 p-3 md:p-4">
         <div className="flex justify-between items-start gap-2">
