@@ -1,6 +1,6 @@
 import { useRef, useEffect, forwardRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Note } from '@/types/graph';
 import { processNetworkData } from '@/utils/networkGraphUtils';
 import { useIsMobile } from '@/hooks/use-mobile';
