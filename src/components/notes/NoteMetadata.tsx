@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { BorderTrail } from "@/components/ui/border-trail";
 
 interface NoteMetadataProps {
   metadata: {
@@ -84,7 +85,16 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
   if (!hasContent) return null;
 
   return (
-    <div className="rounded-lg bg-muted/50 backdrop-blur-sm border border-border/5">
+    <div className="relative rounded-lg bg-muted/50 backdrop-blur-sm border border-border/5">
+      <BorderTrail 
+        className="bg-gradient-to-l from-primary/30 via-primary/50 to-primary/30"
+        size={120}
+        transition={{
+          ease: 'linear',
+          duration: 8,
+          repeat: Infinity,
+        }}
+      />
       <div className="p-4 md:p-6">
         <h3 className="text-lg md:text-xl font-semibold text-foreground/90 mb-4">
           {inputType === 'image' ? 'Image Analysis' : 'Note Analysis'}
