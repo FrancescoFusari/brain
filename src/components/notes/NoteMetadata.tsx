@@ -85,7 +85,7 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
   if (!hasContent) return null;
 
   return (
-    <div className="relative rounded-sm bg-muted/50 backdrop-blur-sm border border-border/5">
+    <div className="relative rounded-sm bg-muted/50 backdrop-blur-sm border border-border/5 w-full max-w-full overflow-hidden">
       <BorderTrail 
         className="bg-gradient-to-l from-primary/30 via-primary/50 to-primary/30"
         size={120}
@@ -95,13 +95,13 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
           repeat: Infinity,
         }}
       />
-      <div className="p-8 md:p-10">
-        <h3 className="text-lg md:text-xl font-semibold text-[#E0E0D7] mb-8">
+      <div className="p-4 sm:p-6 md:p-8">
+        <h3 className="text-lg md:text-xl font-semibold text-[#E0E0D7] mb-6">
           {inputType === 'image' ? 'Image Analysis' : 'Note Analysis'}
         </h3>
         
-        <ScrollArea className="h-full max-h-[600px] pr-8">
-          <div className="space-y-8">
+        <ScrollArea className="h-full max-h-[600px] pr-2 sm:pr-4">
+          <div className="space-y-6">
             {sections.map((section, index) => {
               if (!section.content || 
                   (Array.isArray(section.content) && section.content.length === 0) ||
@@ -110,17 +110,17 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
               }
 
               return (
-                <div key={index} className="px-2">
-                  <h4 className="text-sm font-medium text-[#E0E0D7] mb-4">
+                <div key={index} className="px-1 sm:px-2">
+                  <h4 className="text-sm font-medium text-[#E0E0D7] mb-3">
                     {section.title}
                   </h4>
                   {section.type === 'badges' ? (
-                    <div className="flex flex-wrap gap-2.5">
+                    <div className="flex flex-wrap gap-2">
                       {(section.content as string[]).map((item, badgeIndex) => (
                         <Badge 
                           key={badgeIndex} 
                           variant="secondary"
-                          className="bg-accent/50 hover:bg-accent/70 transition-colors px-4 py-1.5"
+                          className="bg-accent/50 hover:bg-accent/70 transition-colors px-3 py-1"
                         >
                           {item}
                         </Badge>
@@ -132,7 +132,7 @@ export const NoteMetadata = ({ metadata, inputType }: NoteMetadataProps) => {
                     </p>
                   )}
                   {index < sections.length - 1 && (
-                    <Separator className="my-8 opacity-20" />
+                    <Separator className="my-6 opacity-20" />
                   )}
                 </div>
               );
