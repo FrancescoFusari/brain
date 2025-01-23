@@ -510,6 +510,13 @@ class Network3DGraph {
     return !this.isMobile || ['section', 'category'].includes(node.type) || node.connections?.length > 3;
   }
 
+  initGraph() {
+    console.log("Initializing graph");
+    this.createNodes();
+    this.createLinks();
+    this.initPhysics();
+  }
+
   dispose() {
     this.stopAnimation();
     window.removeEventListener('resize', this.handleResize);
