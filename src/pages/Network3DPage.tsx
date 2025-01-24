@@ -2,14 +2,14 @@ import { Network3DGraph } from "@/components/graph/Network3DGraph";
 import { GraphSearch } from "@/components/graph/GraphSearch";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useRef, useState, Suspense } from "react";
+import { useRef, useState, Suspense, useMemo } from "react";
 import { ForceGraphMethods } from "react-force-graph-3d";
 import { NetworkNode, processNetworkData } from "@/utils/networkGraphUtils";
 import { Button } from "@/components/ui/button";
 import { Box, Square } from "lucide-react";
 import { Network2DGraph } from "@/components/graph/Network2DGraph";
 
-// Loading component for the graph
+// Memoized loader component to prevent re-renders
 const GraphLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -17,23 +17,31 @@ const GraphLoader = () => (
 );
 
 const Network3DPage = () => {
+  console.log("Network3DPage render");
   const graphRef = useRef<ForceGraphMethods>();
   const [is3D, setIs3D] = useState(true);
   
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes'],
     queryFn: async () => {
+      console.log("Fetching notes");
       const { data, error } = await supabase
         .from('notes')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching notes:", error);
+        throw error;
+      }
       return data;
-    }
+    },
+    staleTime: 30000, // Cache data for 30 seconds
+    cacheTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes
   });
 
-  const { nodes } = processNetworkData(notes);
+  // Memoize processed network data to prevent recalculation on every render
+  const { nodes } = useMemo(() => processNetworkData(notes), [notes]);
 
   const handleNodeSelect = (node: NetworkNode) => {
     if (!graphRef.current || !is3D) return;
@@ -52,6 +60,7 @@ const Network3DPage = () => {
     );
   };
 
+  // Show loader only during initial data fetch
   if (isLoading) {
     return <GraphLoader />;
   }
