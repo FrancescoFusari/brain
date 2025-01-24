@@ -97,7 +97,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
           variant="ghost"
           size="sm"
           className={headerButtonClasses}
-          onClick={() => handleSelect(node)}
+          onClick={handleToggle}
         >
           <NodeIcon className={cn("w-4 h-4", node.type === 'tag' && "w-3 h-3")} />
           {node.name}
@@ -126,21 +126,21 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
         </Button>
       </div>
 
-      {isExpanded && (
-        <div className="space-y-2 mt-2">
-          {/* Only show tags section for notes */}
-          {node.type === 'note' && (
-            <div className="space-y-1.5">
-              <div className="flex items-center text-xs text-muted-foreground">
-                <Tag className="h-3 w-3 mr-1.5" />
-                Connected Tags
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {renderConnectedItems(relatedTags, 'tag')}
-              </div>
+      <div className={cn("space-y-2", !isExpanded && "mt-1.5")}>
+        {/* Only show tags section for notes */}
+        {node.type === 'note' && (
+          <div className="space-y-1.5">
+            <div className="flex items-center text-xs text-muted-foreground">
+              <Tag className="h-3 w-3 mr-1.5" />
+              {isExpanded ? 'Connected Tags' : 'Tags'}
             </div>
-          )}
+            <div className="flex flex-wrap gap-1.5">
+              {renderConnectedItems(relatedTags, 'tag')}
+            </div>
+          </div>
+        )}
 
+        {isExpanded && (
           <div className="space-y-1">
             <div className="flex items-center text-xs text-muted-foreground">
               <Link2 className="h-3 w-3 mr-1.5" />
@@ -150,8 +150,8 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
               {renderConnectedItems(relatedNotes, 'note')}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

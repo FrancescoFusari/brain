@@ -9,43 +9,15 @@ import { NetworkNode, processNetworkData } from '@/utils/networkGraphUtils';
 
 interface Network2DGraphProps {
   notes: Note[];
-  onNodeSelect?: (node: NetworkNode) => void;
 }
 
-export const Network2DGraph = ({ notes, onNodeSelect }: Network2DGraphProps) => {
+export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const zoomRef = useRef<d3.ZoomBehavior<Element, unknown>>();
   const { theme } = useTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
   const dimensions = useGraphDimensions(containerRef, true);
-
-  const focusNode = (node: NetworkNode) => {
-    if (!svgRef.current || !zoomRef.current || !node.x || !node.y) {
-      console.warn("Cannot focus on node, missing references or coordinates:", { node });
-      return;
-    }
-
-    console.log("Focusing on 2D node:", node);
-
-    const svg = d3.select(svgRef.current);
-    const distance = node.type === 'section' ? 120 : 
-                    node.type === 'category' ? 80 : 40;
-
-    // Calculate the target transform
-    const scale = 1.2;
-    const x = dimensions.width / 2 - (node.x * scale);
-    const y = dimensions.height / 2 - (node.y * scale);
-
-    // Animate to the new position
-    svg.transition()
-      .duration(750)
-      .call(
-        zoomRef.current.transform as any,
-        d3.zoomIdentity.translate(x, y).scale(scale)
-      );
-  };
 
   useEffect(() => {
     if (!svgRef.current || !dimensions.width || !dimensions.height) return;
@@ -73,20 +45,15 @@ export const Network2DGraph = ({ notes, onNodeSelect }: Network2DGraphProps) => 
         g.attr("transform", event.transform);
       });
 
-    // Store zoom reference for later use
-    zoomRef.current = zoom;
+    svg.call(zoom as any);
 
-    // Set initial zoom level to show graph from further away
-    svg.call(zoom as any)
-      .call(zoom.transform as any, d3.zoomIdentity.scale(0.2));
-
-    // Create the simulation with increased forces for better spacing
+    // Create the simulation
     const simulation = d3.forceSimulation(nodesData)
-      .force("link", d3.forceLink(linksData).id((d: any) => d.id).distance(50))
-      .force("charge", d3.forceManyBody().strength(-400))
+      .force("link", d3.forceLink(linksData).id((d: any) => d.id).distance(30))
+      .force("charge", d3.forceManyBody().strength(-300))
       .force("x", d3.forceX(dimensions.width / 2))
       .force("y", d3.forceY(dimensions.height / 2))
-      .force("collision", d3.forceCollide().radius(40));
+      .force("collision", d3.forceCollide().radius(30));
 
     // Add links with thinner width and less opacity
     const link = g.append("g")
@@ -102,18 +69,8 @@ export const Network2DGraph = ({ notes, onNodeSelect }: Network2DGraphProps) => 
       .selectAll("circle")
       .data(nodesData)
       .join("circle")
-      .attr("r", (d: NetworkNode) => {
-        if (d.type === 'section') return 16;
-        if (d.type === 'category') return 12;
-        if (d.type === 'note') return 8;
-        return 4; // tags
-      })
-      .attr("fill", (d: NetworkNode) => {
-        if (d.type === 'section') return '#9333EA';
-        if (d.type === 'category') return '#2563EB';
-        if (d.type === 'note') return '#EF7234';
-        return '#E0E0D7'; // tags
-      })
+      .attr("r", (d: NetworkNode) => d.type === 'note' ? 8 : 4)
+      .attr("fill", (d: NetworkNode) => d.type === 'note' ? '#EF7234' : '#E0E0D7')
       .attr("stroke", theme === 'dark' ? '#1B1B1F' : '#ffffff')
       .attr("stroke-width", 1.5)
       .call(drag(simulation) as any);
@@ -132,9 +89,7 @@ export const Network2DGraph = ({ notes, onNodeSelect }: Network2DGraphProps) => 
 
     // Add node click handler
     node.on("click", (event: MouseEvent, d: NetworkNode) => {
-      if (onNodeSelect) {
-        onNodeSelect(d);
-      } else if (d.type === 'note' && d.originalNote) {
+      if (d.type === 'note' && d.originalNote) {
         navigate(`/note/${d.originalNote.id}`);
       } else {
         toast({
@@ -151,7 +106,7 @@ export const Network2DGraph = ({ notes, onNodeSelect }: Network2DGraphProps) => 
     svg.on("dblclick", () => {
       svg.transition()
         .duration(750)
-        .call(zoom.transform as any, d3.zoomIdentity.scale(0.2));
+        .call(zoom.transform as any, d3.zoomIdentity);
     });
 
     // Update positions on simulation tick
@@ -175,7 +130,7 @@ export const Network2DGraph = ({ notes, onNodeSelect }: Network2DGraphProps) => 
     return () => {
       simulation.stop();
     };
-  }, [dimensions, notes, theme, navigate, toast, onNodeSelect]);
+  }, [dimensions, notes, theme, navigate, toast]);
 
   // Drag functions
   const drag = (simulation: d3.Simulation<any, undefined>) => {

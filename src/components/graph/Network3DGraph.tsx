@@ -33,68 +33,42 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
     
     const { nodes, links } = graphData;
 
-    // Pre-initialize node positions
-    useEffect(() => {
-      nodes.forEach(node => {
-        if (!node.x || !node.y || !node.z) {
-          node.x = Math.random() * 100 - 50;
-          node.y = Math.random() * 100 - 50;
-          node.z = Math.random() * 100 - 50;
-          // Initialize fixed positions if needed
-          node.fx = undefined;
-          node.fy = undefined;
-          node.fz = undefined;
-        }
-      });
-    }, [nodes]);
-
     // Initialize graph with optimized settings
     useEffect(() => {
       const fg = localRef.current;
       if (!fg) return;
 
-      // Pause animation during initialization
+      // Ensure nodes have initial positions
+      nodes.forEach(node => {
+        node.x = node.x || Math.random() * 100 - 50;
+        node.y = node.y || Math.random() * 100 - 50;
+        node.z = node.z || Math.random() * 100 - 50;
+      });
+
       fg.pauseAnimation();
-      
-      // Set initial camera position
       fg.cameraPosition({ x: 0, y: 0, z: isMobile ? 300 : 200 });
       
       const forceStrength = isMobile ? -20 : -40;
       const distanceMax = isMobile ? 150 : 250;
       const linkDistance = isMobile ? 30 : 50;
       
-      // Configure forces with safety checks
-      const linkForce = fg.d3Force('link');
-      if (linkForce) {
-        linkForce.distance(linkDistance).strength(0.2);
-      }
-
-      const chargeForce = fg.d3Force('charge');
-      if (chargeForce) {
-        chargeForce.strength(forceStrength).distanceMax(distanceMax);
-      }
-
-      const centerForce = fg.d3Force('center');
-      if (centerForce) {
-        centerForce.strength(0.05);
-      }
-
-      // Add collision force
+      fg.d3Force('link')?.distance(linkDistance).strength(0.2);
+      fg.d3Force('charge')?.strength(forceStrength).distanceMax(distanceMax);
+      fg.d3Force('center')?.strength(0.05);
+      
       fg.d3Force('collision', d3.forceCollide()
         .radius((node: NetworkNode) => {
-          if (!node) return 3;
           switch (node.type) {
-            case 'section': return 12;
-            case 'category': return 8;
-            case 'note': return 5;
-            default: return 3;
+            case 'section': return 12;    // Increased from 8
+            case 'category': return 8;    // Increased from 6
+            case 'note': return 5;        // Increased from 4
+            default: return 3;            // Tags stay the same size
           }
         })
         .strength(0.9)
         .iterations(1)
       );
 
-      // Resume animation after a short delay
       const timer = setTimeout(() => fg.resumeAnimation(), 50);
 
       return () => {
@@ -115,28 +89,26 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
     }, [ref]);
 
     const getNodeColor = useCallback((node: NetworkNode) => {
-      if (!node) return '#22c55e';
       switch (node.type) {
-        case 'section': return '#9333ea';
-        case 'category': return '#f59e0b';
-        case 'note': return '#ef4444';
-        default: return '#22c55e';
+        case 'section': return '#9333ea';     // Purple - more vibrant
+        case 'category': return '#f59e0b';    // Amber - more vibrant
+        case 'note': return '#ef4444';        // Red - more vibrant
+        default: return '#22c55e';            // Green - more vibrant for tags
       }
     }, []);
 
     const getNodeSize = useCallback((node: NetworkNode) => {
-      if (!node) return isMobile ? 1.5 : 2;
       switch (node.type) {
-        case 'section': return isMobile ? 4.5 : 6;
-        case 'category': return isMobile ? 3.5 : 4.5;
-        case 'note': return isMobile ? 2.5 : 3.5;
-        default: return isMobile ? 1.5 : 2;
+        case 'section': return isMobile ? 4.5 : 6;     // Increased from 3/4
+        case 'category': return isMobile ? 3.5 : 4.5;  // Increased from 2.5/3.5
+        case 'note': return isMobile ? 2.5 : 3.5;      // Increased from 2/3
+        default: return isMobile ? 1.5 : 2;            // Tags stay the same size
       }
     }, [isMobile]);
 
-    // Optimized node object creation with safety checks
+    // Optimized node object creation
     const createNodeObject = useCallback((node: NetworkNode) => {
-      if (!node) return null;
+      if (!node) return null;  // Safety check for null nodes
       
       const group = new THREE.Group();
       
@@ -146,17 +118,18 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
         new THREE.MeshLambertMaterial({ 
           color: getNodeColor(node),
           transparent: true,
-          opacity: 0.85
+          opacity: 0.85  // Slightly increased opacity
         })
       );
       group.add(sphere);
       
-      if (!isMobile || ['section', 'category'].includes(node.type) || (node.connections?.length || 0) > 3) {
-        const sprite = new SpriteText(node.name || '');
+      // Only add text sprites for important nodes or on desktop
+      if (!isMobile || ['section', 'category'].includes(node.type) || node.connections?.length > 3) {
+        const sprite = new SpriteText(node.name);
         sprite.color = '#ffffff';
-        sprite.textHeight = isMobile ? 2 : 3;
-        sprite.backgroundColor = 'rgba(0,0,0,0.6)';
-        sprite.padding = isMobile ? 0.8 : 1.2;
+        sprite.textHeight = isMobile ? 2 : 3;  // Increased text size
+        sprite.backgroundColor = 'rgba(0,0,0,0.6)';  // More opaque background
+        sprite.padding = isMobile ? 0.8 : 1.2;  // Increased padding
         sprite.borderRadius = 3;
         (sprite as unknown as THREE.Object3D).position.set(getNodeSize(node) + 2, 0, 0);
         group.add(sprite);
@@ -182,13 +155,13 @@ export const Network3DGraph = forwardRef<ForceGraphMethods, Network3DGraphProps>
         <ForceGraph3D
           ref={localRef as any}
           graphData={{ nodes, links }}
-          nodeLabel={(node: NetworkNode) => node ? `${node.type}: ${node.name}` : ''}
+          nodeLabel={(node: NetworkNode) => `${node.type}: ${node.name}`}
           nodeThreeObject={createNodeObject}
           nodeColor={getNodeColor}
           backgroundColor="#1B1B1F"
           linkColor={() => "#8E9196"}
-          linkWidth={0.3}
-          linkOpacity={0.4}
+          linkWidth={0.3}  // Slightly increased from 0.2
+          linkOpacity={0.4}  // Slightly increased from 0.3
           linkDirectionalParticles={0}
           enableNavigationControls={true}
           enableNodeDrag={true}
