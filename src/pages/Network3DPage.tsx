@@ -63,7 +63,7 @@ const Network3DPage = () => {
   }
 
   return (
-    <div className="fixed inset-0 -mt-16">
+    <div className="fixed inset-0 -mt-16 -mb-16">
       <div className="absolute inset-0">
         <Suspense fallback={<GraphLoader />}>
           {is3D ? (
