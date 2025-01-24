@@ -19,7 +19,7 @@ const GraphLoader = () => (
 const Network3DPage = () => {
   console.log("Network3DPage render");
   const graphRef = useRef<ForceGraphMethods>();
-  const [is3D, setIs3D] = useState(false); // Changed to false to show 2D by default
+  const [is3D, setIs3D] = useState(true);
   
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes'],
@@ -36,10 +36,11 @@ const Network3DPage = () => {
       }
       return data;
     },
-    staleTime: 30000,
-    gcTime: 5 * 60 * 1000,
+    staleTime: 30000, // Cache data for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes (formerly cacheTime)
   });
 
+  // Memoize processed network data to prevent recalculation on every render
   const { nodes } = useMemo(() => processNetworkData(notes), [notes]);
 
   const handleNodeSelect = (node: NetworkNode) => {
@@ -59,6 +60,7 @@ const Network3DPage = () => {
     );
   };
 
+  // Show loader only during initial data fetch
   if (isLoading) {
     return <GraphLoader />;
   }
@@ -80,7 +82,7 @@ const Network3DPage = () => {
       <Button
         variant="outline"
         size="icon"
-        className="absolute right-4 mb-28 bottom-0 z-10 bg-background/80 backdrop-blur-sm"
+        className="absolute bottom-4 right-4 z-10 bg-background/80 backdrop-blur-sm"
         onClick={() => setIs3D(!is3D)}
       >
         {is3D ? <Square className="h-4 w-4" /> : <Box className="h-4 w-4" />}
