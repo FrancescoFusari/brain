@@ -19,7 +19,7 @@ const GraphLoader = () => (
 const Network3DPage = () => {
   console.log("Network3DPage render");
   const graphRef = useRef<ForceGraphMethods>();
-  const [is3D, setIs3D] = useState(false);
+  const [is3D, setIs3D] = useState(true);
   
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes'],
@@ -36,10 +36,11 @@ const Network3DPage = () => {
       }
       return data;
     },
-    staleTime: 30000,
-    gcTime: 5 * 60 * 1000,
+    staleTime: 30000, // Cache data for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes (formerly cacheTime)
   });
 
+  // Memoize processed network data to prevent recalculation on every render
   const { nodes } = useMemo(() => processNetworkData(notes), [notes]);
 
   const handleNodeSelect = (node: NetworkNode) => {
@@ -59,12 +60,13 @@ const Network3DPage = () => {
     );
   };
 
+  // Show loader only during initial data fetch
   if (isLoading) {
     return <GraphLoader />;
   }
 
   return (
-    <div className="fixed inset-0 -mt-16 -mb-16">
+    <div className="fixed inset-0">
       <div className="absolute inset-0">
         <Suspense fallback={<GraphLoader />}>
           {is3D ? (
@@ -74,13 +76,13 @@ const Network3DPage = () => {
           )}
         </Suspense>
       </div>
-      <div className="absolute inset-x-0 top-20 z-10">
+      <div className="absolute inset-x-0 top-0 z-10">
         <GraphSearch nodes={nodes} onNodeSelect={handleNodeSelect} />
       </div>
       <Button
         variant="outline"
         size="icon"
-        className="absolute bottom-24 right-4 z-50 bg-background/80 backdrop-blur-sm md:bottom-4"
+        className="absolute bottom-4 right-4 z-10 bg-background/80 backdrop-blur-sm"
         onClick={() => setIs3D(!is3D)}
       >
         {is3D ? <Square className="h-4 w-4" /> : <Box className="h-4 w-4" />}
