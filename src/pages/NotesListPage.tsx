@@ -1,11 +1,11 @@
 import { NoteList } from "@/components/NoteList";
 import { BottomNav } from "@/components/BottomNav";
-import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { GraphSearch } from "@/components/graph/GraphSearch";
+import { NetworkNode } from "@/utils/networkGraphUtils";
 
 const NotesListPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,9 +40,21 @@ const NotesListPage = () => {
     },
   });
 
+  // Convert notes to network nodes format for search
+  const networkNodes: NetworkNode[] = notes?.map(note => ({
+    id: note.id,
+    name: note.content?.split('\n')[0].substring(0, 30) + '...' || '',
+    type: 'note',
+    value: 1,
+    originalNote: note,
+    connections: note.tags || []
+  })) || [];
+
   const filteredNotes = notes?.filter(note => 
-    note.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    note.tags?.some(tag => tag?.toLowerCase().includes(searchQuery.toLowerCase()))
+    searchQuery ? (
+      note.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      note.tags?.some(tag => tag?.toLowerCase().includes(searchQuery.toLowerCase()))
+    ) : true
   );
 
   return (
@@ -52,13 +64,13 @@ const NotesListPage = () => {
           <div className="flex flex-col space-y-2 md:space-y-6">
             <h1 className="text-2xl font-semibold text-secondary">Vault</h1>
             <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search notes and tags..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full bg-muted border-muted"
+              <GraphSearch 
+                nodes={networkNodes}
+                onNodeSelect={(node) => {
+                  if (node.type === 'note') {
+                    setSearchQuery(node.name);
+                  }
+                }}
               />
             </div>
             {isLoading ? (
