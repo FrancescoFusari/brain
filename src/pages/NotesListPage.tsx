@@ -49,7 +49,7 @@ const NotesListPage = () => {
     <div className="flex min-h-screen w-full">
       <div className="flex-1">
         <div className="container mx-auto pt-2 pb-4 md:pt-4 md:pb-8 px-2 md:px-4">
-          <div className="flex flex-col space-y-4 md:space-y-6">
+          <div className="flex flex-col space-y-2 md:space-y-6">
             <h1 className="text-2xl font-semibold text-secondary">Vault</h1>
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
