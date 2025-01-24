@@ -64,7 +64,7 @@ const Network3DPage = () => {
 
   return (
     <div className="absolute inset-0 h-screen w-screen">
-      <div className="w-full h-full">
+      <div className="absolute inset-0">
         <Suspense fallback={<GraphLoader />}>
           {is3D ? (
             <Network3DGraph ref={graphRef} notes={notes} />
