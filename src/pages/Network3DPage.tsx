@@ -63,8 +63,8 @@ const Network3DPage = () => {
   }
 
   return (
-    <div className="fixed inset-0 -mt-16 -mb-16">
-      <div className="absolute inset-0">
+    <div className="absolute inset-0 h-screen w-screen">
+      <div className="w-full h-full">
         <Suspense fallback={<GraphLoader />}>
           {is3D ? (
             <Network3DGraph ref={graphRef} notes={notes} />
@@ -73,7 +73,7 @@ const Network3DPage = () => {
           )}
         </Suspense>
       </div>
-      <div className="absolute inset-x-0 top-20 z-10">
+      <div className="absolute top-20 inset-x-0 z-10">
         <GraphSearch nodes={nodes} onNodeSelect={handleNodeSelect} />
       </div>
       <Button
