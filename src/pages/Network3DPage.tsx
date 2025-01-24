@@ -19,7 +19,7 @@ const GraphLoader = () => (
 const Network3DPage = () => {
   console.log("Network3DPage render");
   const graphRef = useRef<ForceGraphMethods>();
-  const [is3D, setIs3D] = useState(false); // Changed to false for 2D default
+  const [is3D, setIs3D] = useState(false);
   
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes'],
@@ -64,7 +64,7 @@ const Network3DPage = () => {
   }
 
   return (
-    <div className="fixed inset-0">
+    <div className="fixed inset-0 -mt-16 -mb-16">
       <div className="absolute inset-0">
         <Suspense fallback={<GraphLoader />}>
           {is3D ? (
@@ -74,13 +74,13 @@ const Network3DPage = () => {
           )}
         </Suspense>
       </div>
-      <div className="absolute inset-x-0 top-0 z-10">
+      <div className="absolute inset-x-0 top-20 z-10">
         <GraphSearch nodes={nodes} onNodeSelect={handleNodeSelect} />
       </div>
       <Button
         variant="outline"
         size="icon"
-        className="absolute bottom-24 right-4 z-10 bg-background/80 backdrop-blur-sm md:bottom-4"
+        className="absolute bottom-24 right-4 z-50 bg-background/80 backdrop-blur-sm md:bottom-4"
         onClick={() => setIs3D(!is3D)}
       >
         {is3D ? <Square className="h-4 w-4" /> : <Box className="h-4 w-4" />}
