@@ -37,7 +37,7 @@ const Network3DPage = () => {
       return data;
     },
     staleTime: 30000, // Cache data for 30 seconds
-    cacheTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes
+    gcTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes (formerly cacheTime)
   });
 
   // Memoize processed network data to prevent recalculation on every render
