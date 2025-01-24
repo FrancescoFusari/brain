@@ -33,8 +33,8 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
 
     // Create SVG with zoom support
     const svg = d3.select(svgRef.current)
-      .attr("viewBox", [-dimensions.width / 2, -dimensions.height / 2, dimensions.width, dimensions.height])
-      .attr("style", "max-width: 100%; height: auto;");
+      .attr("viewBox", [0, 0, dimensions.width, dimensions.height])
+      .attr("style", "max-width: 100%; height: 100%;");
 
     // Add zoom behavior
     const g = svg.append("g");
@@ -51,8 +51,8 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
     const simulation = d3.forceSimulation(nodesData)
       .force("link", d3.forceLink(linksData).id((d: any) => d.id).distance(30))
       .force("charge", d3.forceManyBody().strength(-300))
-      .force("x", d3.forceX())
-      .force("y", d3.forceY())
+      .force("x", d3.forceX(dimensions.width / 2))
+      .force("y", d3.forceY(dimensions.height / 2))
       .force("collision", d3.forceCollide().radius(30));
 
     // Add links with thinner width and less opacity
@@ -158,12 +158,13 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
   };
 
   return (
-    <div ref={containerRef} className="w-full h-full">
+    <div ref={containerRef} className="absolute inset-0 w-full h-full">
       <svg
         ref={svgRef}
         width={dimensions.width}
         height={dimensions.height}
         className="w-full h-full"
+        style={{ display: 'block' }}
       />
     </div>
   );
