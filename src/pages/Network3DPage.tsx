@@ -44,16 +44,25 @@ const Network3DPage = () => {
   const handleNodeSelect = (node: NetworkNode) => {
     if (!graphRef.current || !is3D) return;
     
-    const distance = 40;
-    const distRatio = 1 + distance/Math.hypot(node.x || 0, node.y || 0, node.z || 0);
+    console.log("Focusing on node:", node);
+    
+    if (!node.x || !node.y || !node.z) {
+      console.warn("Node position not initialized:", node);
+      return;
+    }
+    
+    const distance = node.type === 'section' ? 120 : 
+                    node.type === 'category' ? 80 : 40;
+                    
+    const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
 
     graphRef.current.cameraPosition(
       { 
-        x: (node.x || 0) * distRatio, 
-        y: (node.y || 0) * distRatio, 
-        z: (node.z || 0) * distRatio 
+        x: node.x * distRatio, 
+        y: node.y * distRatio, 
+        z: node.z * distRatio 
       },
-      { x: node.x || 0, y: node.y || 0, z: node.z || 0 },
+      { x: node.x, y: node.y, z: node.z },
       1000
     );
   };

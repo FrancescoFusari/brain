@@ -97,7 +97,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
           variant="ghost"
           size="sm"
           className={headerButtonClasses}
-          onClick={handleToggle}
+          onClick={() => handleSelect(node)}
         >
           <NodeIcon className={cn("w-4 h-4", node.type === 'tag' && "w-3 h-3")} />
           {node.name}
