@@ -74,9 +74,7 @@ export const GraphSearch = ({ nodes, onNodeSelect }: GraphSearchProps) => {
                   relatedNodes={getRelatedNodes(node)}
                   onSelect={(selectedNode) => {
                     onNodeSelect(selectedNode);
-                    if (selectedNode.id !== node.id) {
-                      setSearchTerm("");
-                    }
+                    setSearchTerm("");
                   }}
                 />
               ))}
