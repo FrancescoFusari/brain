@@ -5,8 +5,6 @@ import { NoteDetail } from "@/components/NoteDetail";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChatInterface } from "@/components/ChatInterface";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { TagsSidebar } from "@/components/TagsSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
 
 type NoteMetadata = {
   technical_details?: string;
@@ -68,26 +66,23 @@ const NotePage = () => {
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <TagsSidebar />
-        <div className="flex-1">
-          <div className="container">
-            <div className="flex flex-col md:flex-row md:gap-6">
-              <div className="flex-1">
-                <NoteDetail note={note} />
-              </div>
-              {!isMobile && (
-                <div className="w-[400px] shrink-0">
-                  <ChatInterface noteContent={note.content} noteId={note.id} />
-                </div>
-              )}
+    <div className="flex min-h-screen w-full">
+      <div className="flex-1">
+        <div className="container">
+          <div className="flex flex-col md:flex-row md:gap-6">
+            <div className="flex-1">
+              <NoteDetail note={note} />
             </div>
-            {isMobile && <ChatInterface noteContent={note.content} noteId={note.id} />}
+            {!isMobile && (
+              <div className="w-[400px] shrink-0">
+                <ChatInterface noteContent={note.content} noteId={note.id} />
+              </div>
+            )}
           </div>
+          {isMobile && <ChatInterface noteContent={note.content} noteId={note.id} />}
         </div>
       </div>
-    </SidebarProvider>
+    </div>
   );
 };
 
