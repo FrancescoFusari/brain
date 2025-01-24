@@ -6,7 +6,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { useGraphDimensions } from '@/hooks/useGraphDimensions';
 import { Note } from '@/types/graph';
 import { NetworkNode, processNetworkData } from '@/utils/networkGraphUtils';
-import { useTagCategories } from '@/hooks/useTagCategories';
 
 interface Network2DGraphProps {
   notes: Note[];
@@ -19,7 +18,6 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const dimensions = useGraphDimensions(containerRef, true);
-  const { savedCategories, lifeSections } = useTagCategories();
 
   useEffect(() => {
     if (!svgRef.current || !dimensions.width || !dimensions.height) return;
@@ -27,8 +25,7 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
     // Clear previous graph
     d3.select(svgRef.current).selectAll("*").remove();
 
-    // Process data with categories and sections
-    const { nodes, links } = processNetworkData(notes, savedCategories, lifeSections);
+    const { nodes, links } = processNetworkData(notes);
 
     // Create a copy of the data to avoid mutation
     const nodesData = nodes.map(d => ({...d}));
@@ -48,17 +45,17 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
         g.attr("transform", event.transform);
       });
 
-    // Set initial zoom level
+    // Set initial zoom level to show graph from further away
     svg.call(zoom as any)
-      .call(zoom.transform as any, d3.zoomIdentity.scale(0.2));
+      .call(zoom.transform as any, d3.zoomIdentity.scale(0.5));
 
-    // Create the simulation with adjusted forces
+    // Create the simulation with increased forces for better spacing
     const simulation = d3.forceSimulation(nodesData)
-      .force("link", d3.forceLink(linksData).id((d: any) => d.id).distance(80))
-      .force("charge", d3.forceManyBody().strength(-600))
+      .force("link", d3.forceLink(linksData).id((d: any) => d.id).distance(50))
+      .force("charge", d3.forceManyBody().strength(-400))
       .force("x", d3.forceX(dimensions.width / 2))
       .force("y", d3.forceY(dimensions.height / 2))
-      .force("collision", d3.forceCollide().radius(d => getNodeRadius(d as NetworkNode) * 1.5));
+      .force("collision", d3.forceCollide().radius(40));
 
     // Add links with thinner width and less opacity
     const link = g.append("g")
@@ -66,55 +63,28 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
       .data(linksData)
       .join("line")
       .attr("stroke", theme === 'dark' ? '#8E9196' : '#2A2A2E')
-      .attr("stroke-opacity", 0.2)
+      .attr("stroke-opacity", 0.3)
       .attr("stroke-width", 0.5);
 
-    // Helper function to get node radius based on type
-    const getNodeRadius = (d: NetworkNode) => {
-      switch (d.type) {
-        case 'section': return 16;
-        case 'category': return 12;
-        case 'note': return 10;
-        default: return 6;
-      }
-    };
-
-    // Helper function to get node color based on type
-    const getNodeColor = (d: NetworkNode) => {
-      switch (d.type) {
-        case 'section': return '#9333ea';   // Purple for sections
-        case 'category': return '#f59e0b';  // Amber for categories
-        case 'note': return '#ef4444';      // Red for notes
-        default: return '#22c55e';          // Green for tags
-      }
-    };
-
-    // Add nodes with different sizes based on type
+    // Add nodes with different sizes for notes and tags
     const node = g.append("g")
       .selectAll("circle")
       .data(nodesData)
       .join("circle")
-      .attr("r", d => getNodeRadius(d as NetworkNode))
-      .attr("fill", d => getNodeColor(d as NetworkNode))
+      .attr("r", (d: NetworkNode) => d.type === 'note' ? 8 : 4)
+      .attr("fill", (d: NetworkNode) => d.type === 'note' ? '#EF7234' : '#E0E0D7')
       .attr("stroke", theme === 'dark' ? '#1B1B1F' : '#ffffff')
       .attr("stroke-width", 1.5)
       .call(drag(simulation) as any);
 
-    // Add node labels with different sizes based on type
+    // Add node labels only for notes
     const labels = g.append("g")
       .selectAll("text")
-      .data(nodesData)
+      .data(nodesData.filter(d => d.type === 'note'))
       .join("text")
       .text((d: NetworkNode) => d.name)
-      .attr("font-size", (d: NetworkNode) => {
-        switch (d.type) {
-          case 'section': return '12px';
-          case 'category': return '10px';
-          case 'note': return '9px';
-          default: return '8px';
-        }
-      })
-      .attr("dx", (d: NetworkNode) => getNodeRadius(d) + 4)
+      .attr("font-size", "8px")
+      .attr("dx", 8)
       .attr("dy", 3)
       .style("pointer-events", "none")
       .style("fill", theme === 'dark' ? '#E0E0D7' : '#2A2A2E');
@@ -125,17 +95,20 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
         navigate(`/note/${d.originalNote.id}`);
       } else {
         toast({
-          title: `${d.type.charAt(0).toUpperCase() + d.type.slice(1)}: ${d.name}`,
+          title: `${d.type === 'tag' ? 'Tag' : 'Note'}: ${d.name}`,
           description: `Connected to ${d.connections?.length || 0} items`,
         });
       }
     });
 
+    // Add double click to zoom
+    svg.on("dblclick.zoom", null);
+    
     // Reset zoom on double click
     svg.on("dblclick", () => {
       svg.transition()
         .duration(750)
-        .call(zoom.transform as any, d3.zoomIdentity.scale(0.2));
+        .call(zoom.transform as any, d3.zoomIdentity.scale(0.5));
     });
 
     // Update positions on simulation tick
@@ -159,7 +132,7 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
     return () => {
       simulation.stop();
     };
-  }, [dimensions, notes, theme, navigate, toast, savedCategories, lifeSections]);
+  }, [dimensions, notes, theme, navigate, toast]);
 
   // Drag functions
   const drag = (simulation: d3.Simulation<any, undefined>) => {
