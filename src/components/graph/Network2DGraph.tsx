@@ -45,15 +45,17 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
         g.attr("transform", event.transform);
       });
 
-    svg.call(zoom as any);
+    // Set initial zoom level to show graph from further away
+    svg.call(zoom as any)
+      .call(zoom.transform as any, d3.zoomIdentity.scale(0.5));
 
-    // Create the simulation
+    // Create the simulation with increased forces for better spacing
     const simulation = d3.forceSimulation(nodesData)
-      .force("link", d3.forceLink(linksData).id((d: any) => d.id).distance(30))
-      .force("charge", d3.forceManyBody().strength(-300))
+      .force("link", d3.forceLink(linksData).id((d: any) => d.id).distance(50))
+      .force("charge", d3.forceManyBody().strength(-400))
       .force("x", d3.forceX(dimensions.width / 2))
       .force("y", d3.forceY(dimensions.height / 2))
-      .force("collision", d3.forceCollide().radius(30));
+      .force("collision", d3.forceCollide().radius(40));
 
     // Add links with thinner width and less opacity
     const link = g.append("g")
@@ -106,7 +108,7 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
     svg.on("dblclick", () => {
       svg.transition()
         .duration(750)
-        .call(zoom.transform as any, d3.zoomIdentity);
+        .call(zoom.transform as any, d3.zoomIdentity.scale(0.5));
     });
 
     // Update positions on simulation tick
