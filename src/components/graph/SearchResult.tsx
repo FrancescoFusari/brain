@@ -48,17 +48,17 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
         <Badge
           key={tag.id}
           variant="secondary"
-          className="cursor-pointer text-xs py-0 h-5 flex items-center gap-1"
+          className="cursor-pointer text-xs py-0 h-5 flex items-center gap-1 max-w-full"
           onClick={() => handleSelect(tag)}
         >
-          <Tag className="h-3 w-3" />
-          {tag.name}
+          <Tag className="h-3 w-3 flex-shrink-0" />
+          <span className="truncate">{tag.name}</span>
         </Badge>
       ));
     }
 
     return items.map((note) => (
-      <div key={note.id} className="flex items-center gap-1 w-full">
+      <div key={note.id} className="flex items-center gap-1 w-full min-w-0">
         <Button
           variant="ghost"
           size="sm"
@@ -81,7 +81,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
   };
 
   const containerClasses = cn(
-    "bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200 w-full overflow-hidden",
+    "bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200 w-full",
     node.type === 'tag' 
       ? isExpanded ? "p-2" : "p-1.5" 
       : isExpanded ? "p-3" : "p-2"
@@ -96,7 +96,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
 
   return (
     <div className={containerClasses}>
-      <div className="flex items-center gap-1 w-full">
+      <div className="flex items-center gap-1 w-full min-w-0">
         <Button
           variant="ghost"
           size="sm"
