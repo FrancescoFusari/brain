@@ -81,7 +81,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
   };
 
   const containerClasses = cn(
-    "bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200 max-w-[280px]",
+    "bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200 w-full",
     node.type === 'tag' 
       ? isExpanded ? "p-2" : "p-1.5" 
       : isExpanded ? "p-3" : "p-2"
