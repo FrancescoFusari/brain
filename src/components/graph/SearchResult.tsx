@@ -117,10 +117,10 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
           </Button>
         )}
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
           onClick={handleToggle}
-          className={cn("p-0 flex-shrink-0", node.type === 'tag' ? "h-7 w-7" : "h-8 w-8")}
+          className={cn("p-0 flex-shrink-0 hover:bg-accent", node.type === 'tag' ? "h-7 w-7" : "h-8 w-8")}
         >
           {isExpanded ? (
             <ChevronUp className={cn("w-4 h-4", node.type === 'tag' && "w-3 h-3")} />
