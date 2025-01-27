@@ -53,21 +53,21 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
     }
 
     return items.map((note) => (
-      <div key={note.id} className="flex items-center gap-1">
+      <div key={note.id} className="flex items-center gap-1 w-full">
         <Button
           variant="ghost"
           size="sm"
-          className="flex-1 justify-start text-xs font-normal h-7 truncate gap-1.5"
+          className="flex-1 justify-start text-xs font-normal h-7 truncate gap-1.5 min-w-0"
           onClick={() => handleSelect(note)}
         >
-          <ArrowRight className="h-3 w-3" />
-          {note.name}
+          <ArrowRight className="h-3 w-3 flex-shrink-0" />
+          <span className="truncate">{note.name}</span>
         </Button>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => handleViewNote(note.id)}
-          className="h-7 w-7 p-0"
+          className="h-7 w-7 p-0 flex-shrink-0"
         >
           <ExternalLink className="h-3 w-3" />
         </Button>
@@ -75,16 +75,15 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
     ));
   };
 
-  // Different styling for tag vs note results
   const containerClasses = cn(
-    "bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200",
+    "bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200 w-full",
     node.type === 'tag' 
       ? isExpanded ? "p-2" : "p-1.5" 
       : isExpanded ? "p-3" : "p-2"
   );
 
   const headerButtonClasses = cn(
-    "flex-1 justify-start font-medium truncate gap-2",
+    "flex-1 justify-start font-medium truncate gap-2 min-w-0",
     node.type === 'tag' 
       ? "text-xs h-7" 
       : "text-sm h-8"
@@ -92,22 +91,22 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
 
   return (
     <div className={containerClasses}>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 w-full">
         <Button
           variant="ghost"
           size="sm"
           className={headerButtonClasses}
-          onClick={handleToggle}
+          onClick={() => handleSelect(node)}
         >
-          <NodeIcon className={cn("w-4 h-4", node.type === 'tag' && "w-3 h-3")} />
-          {node.name}
+          <NodeIcon className={cn("flex-shrink-0 w-4 h-4", node.type === 'tag' && "w-3 h-3")} />
+          <span className="truncate">{node.name}</span>
         </Button>
         {node.type === 'note' && (
           <Button
             variant="ghost"
             size="sm"
             onClick={() => handleViewNote(node.id)}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 flex-shrink-0"
           >
             <ExternalLink className="h-4 w-4" />
           </Button>
@@ -116,7 +115,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
           variant="ghost"
           size="sm"
           onClick={handleToggle}
-          className={cn("p-0", node.type === 'tag' ? "h-7 w-7" : "h-8 w-8")}
+          className={cn("p-0 flex-shrink-0", node.type === 'tag' ? "h-7 w-7" : "h-8 w-8")}
         >
           {isExpanded ? (
             <ChevronUp className={cn("w-4 h-4", node.type === 'tag' && "w-3 h-3")} />
@@ -126,32 +125,31 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
         </Button>
       </div>
 
-      <div className={cn("space-y-2", !isExpanded && "mt-1.5")}>
-        {/* Only show tags section for notes */}
-        {node.type === 'note' && (
-          <div className="space-y-1.5">
-            <div className="flex items-center text-xs text-muted-foreground">
-              <Tag className="h-3 w-3 mr-1.5" />
-              {isExpanded ? 'Connected Tags' : 'Tags'}
+      {isExpanded && (
+        <div className="space-y-2 mt-2">
+          {node.type === 'note' && (
+            <div className="space-y-1.5">
+              <div className="flex items-center text-xs text-muted-foreground">
+                <Tag className="h-3 w-3 mr-1.5 flex-shrink-0" />
+                Connected Tags
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {renderConnectedItems(relatedTags, 'tag')}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {renderConnectedItems(relatedTags, 'tag')}
-            </div>
-          </div>
-        )}
+          )}
 
-        {isExpanded && (
           <div className="space-y-1">
             <div className="flex items-center text-xs text-muted-foreground">
-              <Link2 className="h-3 w-3 mr-1.5" />
+              <Link2 className="h-3 w-3 mr-1.5 flex-shrink-0" />
               Connected Notes
             </div>
             <div className="space-y-0.5">
               {renderConnectedItems(relatedNotes, 'note')}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
