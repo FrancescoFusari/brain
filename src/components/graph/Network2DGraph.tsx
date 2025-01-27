@@ -26,6 +26,7 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
     d3.select(svgRef.current).selectAll("*").remove();
 
     const { nodes, links } = processNetworkData(notes);
+    console.log("Processing network data:", { nodesCount: nodes.length, linksCount: links.length });
 
     // Create a copy of the data to avoid mutation
     const nodesData = nodes.map(d => ({...d}));
@@ -55,7 +56,7 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
       .force("y", d3.forceY(dimensions.height / 2))
       .force("collision", d3.forceCollide().radius(30));
 
-    // Add links with thinner width and less opacity
+    // Add links
     const link = g.append("g")
       .selectAll("line")
       .data(linksData)
@@ -64,7 +65,7 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
       .attr("stroke-opacity", 0.3)
       .attr("stroke-width", 0.5);
 
-    // Add nodes with different sizes for notes and tags
+    // Add nodes
     const node = g.append("g")
       .selectAll("circle")
       .data(nodesData)
@@ -75,7 +76,7 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
       .attr("stroke-width", 1.5)
       .call(drag(simulation) as any);
 
-    // Add node labels only for notes
+    // Add node labels
     const labels = g.append("g")
       .selectAll("text")
       .data(nodesData.filter(d => d.type === 'note'))
@@ -85,13 +86,36 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
       .attr("dx", 8)
       .attr("dy", 3)
       .style("pointer-events", "none")
-      .style("fill", theme === 'dark' ? '#E0E0D7' : '#2A2A2E');
+      .style("fill", theme === 'dark' ? '#E0E0D7' : '#2A2A2E')
+      .style("cursor", "pointer");
+
+    // Function to focus on a node
+    const focusNode = (node: NetworkNode) => {
+      console.log("Focusing on node:", node);
+      
+      const scale = 2;
+      const x = node.x || 0;
+      const y = node.y || 0;
+      
+      // Calculate the transform to center on the node
+      const transform = d3.zoomIdentity
+        .translate(dimensions.width / 2, dimensions.height / 2)
+        .scale(scale)
+        .translate(-x, -y);
+
+      // Animate the transition
+      svg.transition()
+        .duration(750)
+        .call(zoom.transform as any, transform);
+    };
 
     // Add node click handler
     node.on("click", (event: MouseEvent, d: NetworkNode) => {
+      event.stopPropagation();
       if (d.type === 'note' && d.originalNote) {
         navigate(`/note/${d.originalNote.id}`);
       } else {
+        focusNode(d);
         toast({
           title: `${d.type === 'tag' ? 'Tag' : 'Note'}: ${d.name}`,
           description: `Connected to ${d.connections?.length || 0} items`,
@@ -99,9 +123,12 @@ export const Network2DGraph = ({ notes }: Network2DGraphProps) => {
       }
     });
 
-    // Add double click to zoom
-    svg.on("dblclick.zoom", null);
-    
+    // Add label click handler
+    labels.on("click", (event: MouseEvent, d: NetworkNode) => {
+      event.stopPropagation();
+      focusNode(d);
+    });
+
     // Reset zoom on double click
     svg.on("dblclick", () => {
       svg.transition()
