@@ -25,7 +25,12 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
   const navigate = useNavigate();
   
   const handleToggle = () => setIsExpanded(!isExpanded);
-  const handleSelect = (selectedNode: NetworkNode) => onSelect(selectedNode);
+  
+  const handleSelect = (selectedNode: NetworkNode) => {
+    console.log("Search result selected:", selectedNode);
+    onSelect(selectedNode);
+  };
+  
   const handleViewNote = (noteId: string) => navigate(`/note/${noteId.replace('note-', '')}`);
 
   const relatedTags = relatedNodes.filter(n => n.type === 'tag');

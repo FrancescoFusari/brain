@@ -42,10 +42,23 @@ const Network3DPage = () => {
   const { nodes } = useMemo(() => processNetworkData(notes), [notes]);
 
   const handleNodeSelect = (node: NetworkNode) => {
-    if (!graphRef.current || !is3D) return;
+    console.log("Node selected:", node);
+    
+    if (!is3D) return;
+    
+    if (!graphRef.current) {
+      console.warn("Graph ref not available");
+      return;
+    }
     
     const distance = 40;
     const distRatio = 1 + distance/Math.hypot(node.x || 0, node.y || 0, node.z || 0);
+
+    console.log("Zooming to position:", {
+      x: (node.x || 0) * distRatio,
+      y: (node.y || 0) * distRatio,
+      z: (node.z || 0) * distRatio
+    });
 
     graphRef.current.cameraPosition(
       { 
