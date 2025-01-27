@@ -48,7 +48,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
         <Badge
           key={tag.id}
           variant="secondary"
-          className="cursor-pointer text-xs py-0 h-5 flex items-center gap-1 max-w-full"
+          className="cursor-pointer text-xs py-0 h-5 flex items-center gap-1 max-w-[200px]"
           onClick={() => handleSelect(tag)}
         >
           <Tag className="h-3 w-3 flex-shrink-0" />
@@ -58,11 +58,11 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
     }
 
     return items.map((note) => (
-      <div key={note.id} className="flex items-center gap-1 w-full min-w-0">
+      <div key={note.id} className="flex items-center gap-1 w-full">
         <Button
           variant="ghost"
           size="sm"
-          className="flex-1 justify-start text-xs font-normal h-7 truncate gap-1.5 min-w-0"
+          className="flex-1 justify-start text-xs font-normal h-7 gap-1.5 min-w-0"
           onClick={() => handleSelect(note)}
         >
           <ArrowRight className="h-3 w-3 flex-shrink-0" />
@@ -80,30 +80,19 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
     ));
   };
 
-  const containerClasses = cn(
-    "bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200 w-full",
-    node.type === 'tag' 
-      ? isExpanded ? "p-2" : "p-1.5" 
-      : isExpanded ? "p-3" : "p-2"
-  );
-
-  const headerButtonClasses = cn(
-    "flex-1 justify-start font-medium truncate gap-2 min-w-0",
-    node.type === 'tag' 
-      ? "text-xs h-7" 
-      : "text-sm h-8"
-  );
-
   return (
-    <div className={containerClasses}>
-      <div className="flex items-center gap-1 w-full min-w-0">
+    <div className="bg-background/95 backdrop-blur-sm border rounded-lg transition-all duration-200 w-full overflow-hidden">
+      <div className="flex items-center gap-1 p-2">
         <Button
           variant="ghost"
           size="sm"
-          className={headerButtonClasses}
+          className={cn(
+            "flex-1 justify-start font-medium gap-2 min-w-0",
+            node.type === 'tag' ? "text-xs h-7" : "text-sm h-8"
+          )}
           onClick={() => handleSelect(node)}
         >
-          <NodeIcon className={cn("flex-shrink-0 w-4 h-4", node.type === 'tag' && "w-3 h-3")} />
+          <NodeIcon className={cn("flex-shrink-0", node.type === 'tag' ? "w-3 h-3" : "w-4 h-4")} />
           <span className="truncate">{node.name}</span>
         </Button>
         {node.type === 'note' && (
@@ -120,7 +109,10 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
           variant="secondary"
           size="sm"
           onClick={handleToggle}
-          className={cn("p-0 flex-shrink-0 hover:bg-accent", node.type === 'tag' ? "h-7 w-7" : "h-8 w-8")}
+          className={cn(
+            "p-0 flex-shrink-0 hover:bg-accent",
+            node.type === 'tag' ? "h-7 w-7" : "h-8 w-8"
+          )}
         >
           {isExpanded ? (
             <ChevronUp className={cn("w-4 h-4", node.type === 'tag' && "w-3 h-3")} />
@@ -131,7 +123,7 @@ export const SearchResult = ({ node, relatedNodes, onSelect }: SearchResultProps
       </div>
 
       {isExpanded && (
-        <div className="space-y-2 mt-2">
+        <div className="space-y-2 p-2 border-t">
           {node.type === 'note' && (
             <div className="space-y-1.5">
               <div className="flex items-center text-xs text-muted-foreground">

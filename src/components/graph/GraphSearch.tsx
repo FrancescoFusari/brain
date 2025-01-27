@@ -51,8 +51,8 @@ export const GraphSearch = ({ nodes, onNodeSelect }: GraphSearchProps) => {
   };
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-10">
-      <div className="relative">
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 w-full max-w-md z-10">
+      <div className="relative px-4">
         <Input
           type="text"
           placeholder="Search nodes and tags..."
@@ -60,11 +60,11 @@ export const GraphSearch = ({ nodes, onNodeSelect }: GraphSearchProps) => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pr-10"
         />
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute right-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       </div>
       
       {results.length > 0 && (
-        <div className="mt-2 w-[94%] mx-auto">
+        <div className="mt-2 px-4 w-full">
           <ScrollArea className="h-[400px] rounded-lg border bg-transparent">
             <div className="p-2 space-y-1">
               {results.map((node) => (
