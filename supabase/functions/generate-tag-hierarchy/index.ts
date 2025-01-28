@@ -21,7 +21,6 @@ serve(async (req) => {
     const { tags, userId } = await req.json();
     console.log('Processing tags:', tags);
 
-    // Call OpenAI to analyze tags and suggest hierarchical relationships
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -33,14 +32,14 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a tag organization expert. Given a list of tags, suggest parent-child relationships between them to create a meaningful hierarchy. Return ONLY a JSON array of objects with parent_tag and child_tag properties, nothing else. Example: [{"parent_tag": "technology", "child_tag": "programming"}]'
+            content: 'You are a tag organization expert. Analyze the provided tags and create a hierarchical structure. Return ONLY a JSON array of objects with parent_tag and child_tag properties, nothing else. Example: [{"parent_tag": "technology", "child_tag": "programming"}]'
           },
           {
             role: 'user',
-            content: `Analyze these tags and suggest hierarchical relationships between them: ${JSON.stringify(tags)}`
+            content: `Create a hierarchical structure for these tags: ${JSON.stringify(tags)}`
           }
         ],
-        temperature: 0.7,
+        temperature: 0.3,
         max_tokens: 1000,
       }),
     });
@@ -52,28 +51,17 @@ serve(async (req) => {
     const data = await response.json();
     console.log('OpenAI response:', data);
 
-    // Extract the content and ensure it's valid JSON
     const content = data.choices[0].message.content.trim();
     console.log('Raw content:', content);
 
-    // Try to parse the content directly
     let suggestedRelationships;
     try {
       suggestedRelationships = JSON.parse(content);
-      console.log('Parsed relationships:', suggestedRelationships);
-    } catch (parseError) {
-      console.error('Error parsing OpenAI response:', parseError);
-      // If parsing fails, try to extract JSON from markdown
-      const jsonMatch = content.match(/\[.*\]/s);
-      if (jsonMatch) {
-        suggestedRelationships = JSON.parse(jsonMatch[0]);
-        console.log('Parsed relationships from markdown:', suggestedRelationships);
-      } else {
-        throw new Error('Failed to parse relationships from OpenAI response');
-      }
+    } catch (error) {
+      console.error('Failed to parse OpenAI response directly:', error);
+      throw new Error('Invalid response format from OpenAI');
     }
 
-    // Validate the structure of the relationships
     if (!Array.isArray(suggestedRelationships)) {
       throw new Error('OpenAI response is not an array');
     }
@@ -87,7 +75,7 @@ serve(async (req) => {
     const { error: insertError } = await supabase
       .from('tag_relationships')
       .insert(
-        suggestedRelationships.map((rel: any) => ({
+        suggestedRelationships.map(rel => ({
           ...rel,
           user_id: userId,
         }))
