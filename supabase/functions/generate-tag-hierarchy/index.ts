@@ -40,14 +40,15 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a tag organization expert. Analyze the provided tags and create a hierarchical structure.
-            Return ONLY a JSON array of objects with parent_tag and child_tag properties, where parent tags are more general concepts and child tags are more specific.
-            Example format: [{"parent_tag": "technology", "child_tag": "programming"}]
+            content: `You are a tag organization expert. Your task is to create a hierarchical structure for the provided tags.
+            Return a JSON array of objects with parent_tag and child_tag properties. DO NOT include any markdown formatting or code blocks.
+            Example: [{"parent_tag": "technology", "child_tag": "programming"}]
             Rules:
             - Each child tag should only appear once
             - Parent tags should be broader categories
             - Avoid creating too many parent categories (aim for 3-7)
-            - Parent tags should not be existing tags unless they're truly general categories`
+            - Parent tags should not be existing tags unless they're truly general categories
+            - Return ONLY the JSON array, no other text or formatting`
           },
           {
             role: 'user',
@@ -74,7 +75,14 @@ serve(async (req) => {
 
     let relationships;
     try {
-      const content = data.choices[0].message.content.trim();
+      // Clean the content by removing any markdown code block indicators
+      const content = data.choices[0].message.content
+        .trim()
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      
+      console.log('Cleaned content:', content);
       relationships = JSON.parse(content);
       
       if (!Array.isArray(relationships)) {
