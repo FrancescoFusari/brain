@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowUp, ArrowDown, Plus, Minus, Folder } from "lucide-react";
+import { ArrowUp, ArrowDown, Plus, Minus, Folder, Wand2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TagHierarchyProps {
@@ -22,6 +22,7 @@ export const TagHierarchy = ({ tags }: TagHierarchyProps) => {
   const [relationships, setRelationships] = useState<TagRelationship[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [parentTag, setParentTag] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -50,6 +51,42 @@ export const TagHierarchy = ({ tags }: TagHierarchyProps) => {
         description: "Failed to load tag relationships",
         variant: "destructive",
       });
+    }
+  };
+
+  const generateHierarchy = async () => {
+    try {
+      setIsGenerating(true);
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user?.id) {
+        throw new Error("No authenticated user found");
+      }
+
+      const { data, error } = await supabase.functions.invoke('generate-tag-hierarchy', {
+        body: { 
+          tags,
+          userId: session.session.user.id
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Tag hierarchy generated successfully",
+      });
+
+      // Refresh relationships
+      await fetchRelationships();
+    } catch (error) {
+      console.error('Error generating tag hierarchy:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate tag hierarchy",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -140,8 +177,18 @@ export const TagHierarchy = ({ tags }: TagHierarchyProps) => {
 
   return (
     <Card className="w-full">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <h3 className="text-lg font-medium">Tag Hierarchy</h3>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={generateHierarchy}
+          disabled={isGenerating || tags.length === 0}
+          className="ml-auto"
+        >
+          <Wand2 className="h-4 w-4 mr-2" />
+          {isGenerating ? "Generating..." : "Auto-generate Hierarchy"}
+        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-2">
