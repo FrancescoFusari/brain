@@ -266,6 +266,33 @@ export type Database = {
         }
         Relationships: []
       }
+      tag_relationships: {
+        Row: {
+          child_tag: string
+          created_at: string
+          id: string
+          parent_tag: string
+          relationship_type: string
+          user_id: string
+        }
+        Insert: {
+          child_tag: string
+          created_at?: string
+          id?: string
+          parent_tag: string
+          relationship_type?: string
+          user_id: string
+        }
+        Update: {
+          child_tag?: string
+          created_at?: string
+          id?: string
+          parent_tag?: string
+          relationship_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       combined_notes_view: {

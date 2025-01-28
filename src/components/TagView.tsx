@@ -11,6 +11,7 @@ import { TagCategorization } from "./tags/TagCategorization";
 import { LifeSections } from "./tags/LifeSections";
 import { CategoriesGrid } from "./tags/CategoriesGrid";
 import { TagsGrid } from "./tags/TagsGrid";
+import { TagHierarchy } from "./tags/TagHierarchy";
 import { saveNotesToOfflineStorage } from "@/utils/offlineStorage";
 import { useToast } from "./ui/use-toast";
 import { Note } from "@/types/note";
@@ -163,11 +164,14 @@ export const TagView = () => {
   }
 
   return (
-    <TagOverview
-      savedCategories={savedCategories}
-      lifeSections={lifeSections}
-      onTagClick={handleTagSelect}
-      sortedTags={sortedTags}
-    />
+    <div className="space-y-6">
+      <TagHierarchy tags={Array.from(tagMap.keys())} />
+      <TagOverview
+        savedCategories={savedCategories}
+        lifeSections={lifeSections}
+        onTagClick={handleTagSelect}
+        sortedTags={sortedTags}
+      />
+    </div>
   );
 };
