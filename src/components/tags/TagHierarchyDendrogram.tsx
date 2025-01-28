@@ -13,6 +13,11 @@ interface TagHierarchyDendrogramProps {
   relationships: TagRelationship[];
 }
 
+interface HierarchyData {
+  name: string;
+  children?: HierarchyData[];
+}
+
 export const TagHierarchyDendrogram = ({ relationships }: TagHierarchyDendrogramProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const { theme } = useTheme();
@@ -24,14 +29,14 @@ export const TagHierarchyDendrogram = ({ relationships }: TagHierarchyDendrogram
     d3.select(svgRef.current).selectAll("*").remove();
 
     // Process data into hierarchical structure
-    const hierarchyData: { name: string; children?: any[] } = { name: "Tags" };
-    const parentNodes = new Map<string, { name: string; children: any[] }>();
+    const hierarchyData: HierarchyData = { name: "Tags" };
+    const parentNodes = new Map<string, HierarchyData>();
 
     relationships.forEach(rel => {
       if (!parentNodes.has(rel.parent_tag)) {
         parentNodes.set(rel.parent_tag, { name: rel.parent_tag, children: [] });
       }
-      parentNodes.get(rel.parent_tag)?.children.push({ name: rel.child_tag });
+      parentNodes.get(rel.parent_tag)?.children?.push({ name: rel.child_tag });
     });
 
     hierarchyData.children = Array.from(parentNodes.values());
@@ -42,7 +47,7 @@ export const TagHierarchyDendrogram = ({ relationships }: TagHierarchyDendrogram
     const radius = Math.min(width, height) / 2;
 
     // Create the radial cluster layout
-    const tree = d3.cluster()
+    const tree = d3.cluster<HierarchyData>()
       .size([2 * Math.PI, radius - 100]);
 
     const root = d3.hierarchy(hierarchyData);
@@ -55,13 +60,15 @@ export const TagHierarchyDendrogram = ({ relationships }: TagHierarchyDendrogram
       .append("g")
       .attr("transform", `translate(${width/2},${height/2})`);
 
-    // Create links
+    // Create links with proper typing
+    const linkGenerator = d3.linkRadial<d3.HierarchyLink<HierarchyData>, d3.HierarchyNode<HierarchyData>>()
+      .angle(d => d.x)
+      .radius(d => d.y);
+
     svg.selectAll("path")
       .data(root.links())
       .join("path")
-      .attr("d", d3.linkRadial()
-        .angle((d: any) => d.x)
-        .radius((d: any) => d.y))
+      .attr("d", linkGenerator)
       .attr("fill", "none")
       .attr("stroke", theme === 'dark' ? '#475569' : '#94a3b8')
       .attr("stroke-width", 1);
@@ -70,7 +77,7 @@ export const TagHierarchyDendrogram = ({ relationships }: TagHierarchyDendrogram
     const nodes = svg.selectAll("g")
       .data(root.descendants())
       .join("g")
-      .attr("transform", (d: any) => 
+      .attr("transform", d => 
         `translate(${d3.pointRadial(d.x, d.y)[0]},${d3.pointRadial(d.x, d.y)[1]})`
       );
 
@@ -82,10 +89,10 @@ export const TagHierarchyDendrogram = ({ relationships }: TagHierarchyDendrogram
     // Add labels
     nodes.append("text")
       .attr("dy", "0.31em")
-      .attr("x", (d: any) => d.x < Math.PI ? 6 : -6)
-      .attr("text-anchor", (d: any) => d.x < Math.PI ? "start" : "end")
-      .attr("transform", (d: any) => d.x >= Math.PI ? "rotate(180)" : null)
-      .text((d: any) => d.data.name)
+      .attr("x", d => d.x < Math.PI ? 6 : -6)
+      .attr("text-anchor", d => d.x < Math.PI ? "start" : "end")
+      .attr("transform", d => d.x >= Math.PI ? "rotate(180)" : null)
+      .text(d => d.data.name)
       .attr("fill", theme === 'dark' ? '#e2e8f0' : '#1e293b')
       .attr("font-size", "12px");
 
