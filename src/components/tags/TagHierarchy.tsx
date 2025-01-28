@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,7 @@ export const TagHierarchy = ({ tags }: TagHierarchyProps) => {
         .eq('user_id', session.session.user.id);
       
       if (error) throw error;
-      setRelationships(data);
+      setRelationships(data || []);
     } catch (error) {
       console.error('Error fetching tag relationships:', error);
       toast({
@@ -106,7 +107,7 @@ export const TagHierarchy = ({ tags }: TagHierarchyProps) => {
       <CardContent>
         {relationships.length > 0 && (
           <div className="space-y-4">
-            {Array.from(new Set(relationships.map(r => r.parent_tag))).map(parent => (
+            {Array.from(new Set(relationships.map(r => r.parent_tag))).map((parent) => (
               <div key={parent} className="space-y-2">
                 <Badge variant="secondary" className="text-sm">
                   {parent}
