@@ -44,57 +44,67 @@ export const TagHierarchyDendrogram = ({ relationships }: TagHierarchyDendrogram
     // Setup dimensions
     const width = svgRef.current.clientWidth;
     const height = svgRef.current.clientHeight;
-    const radius = Math.min(width, height) / 2;
+    const cx = width * 0.5;
+    const cy = height * 0.54;
+    const radius = Math.min(width, height) / 2 - 80;
 
     // Create the radial cluster layout
     const tree = d3.cluster<HierarchyData>()
-      .size([2 * Math.PI, radius - 100]);
+      .size([2 * Math.PI, radius])
+      .separation((a, b) => (a.parent == b.parent ? 1 : 2) / a.depth);
 
-    const root = d3.hierarchy(hierarchyData);
-    tree(root);
+    // Sort and apply the layout
+    const root = tree(d3.hierarchy(hierarchyData)
+      .sort((a, b) => d3.ascending(a.data.name, b.data.name)));
 
     // Create the SVG container
     const svg = d3.select(svgRef.current)
-      .attr("width", width)
-      .attr("height", height)
-      .append("g")
-      .attr("transform", `translate(${width/2},${height/2})`);
+      .attr("viewBox", [-cx, -cy, width, height])
+      .attr("style", "width: 100%; height: auto; font: 12px sans-serif;");
 
-    // Create links with proper typing
-    const linkGenerator = d3.linkRadial<d3.HierarchyLink<HierarchyData>, d3.HierarchyNode<HierarchyData>>()
-      .angle(d => d.x)
-      .radius(d => d.y);
-
-    svg.selectAll("path")
-      .data(root.links())
-      .join("path")
-      .attr("d", linkGenerator)
+    // Create links
+    svg.append("g")
       .attr("fill", "none")
       .attr("stroke", theme === 'dark' ? '#475569' : '#94a3b8')
-      .attr("stroke-width", 1);
+      .attr("stroke-opacity", 0.4)
+      .attr("stroke-width", 1.5)
+      .selectAll("path")
+      .data(root.links())
+      .join("path")
+      .attr("d", d3.linkRadial<d3.HierarchyLink<HierarchyData>>()
+        .angle(d => d.x)
+        .radius(d => d.y));
 
     // Create nodes
-    const nodes = svg.selectAll("g")
+    svg.append("g")
+      .selectAll("circle")
       .data(root.descendants())
-      .join("g")
-      .attr("transform", d => 
-        `translate(${d3.pointRadial(d.x, d.y)[0]},${d3.pointRadial(d.x, d.y)[1]})`
-      );
-
-    // Add circles at nodes
-    nodes.append("circle")
-      .attr("r", 4)
-      .attr("fill", theme === 'dark' ? '#e2e8f0' : '#1e293b');
+      .join("circle")
+      .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
+      .attr("fill", d => d.children ? 
+        (theme === 'dark' ? '#e2e8f0' : '#1e293b') : 
+        (theme === 'dark' ? '#94a3b8' : '#475569'))
+      .attr("r", 3);
 
     // Add labels
-    nodes.append("text")
+    svg.append("g")
+      .attr("stroke-linejoin", "round")
+      .attr("stroke-width", 3)
+      .selectAll("text")
+      .data(root.descendants())
+      .join("text")
+      .attr("transform", d => `
+        rotate(${d.x * 180 / Math.PI - 90}) 
+        translate(${d.y},0) 
+        rotate(${d.x >= Math.PI ? 180 : 0})
+      `)
       .attr("dy", "0.31em")
-      .attr("x", d => d.x < Math.PI ? 6 : -6)
-      .attr("text-anchor", d => d.x < Math.PI ? "start" : "end")
-      .attr("transform", d => d.x >= Math.PI ? "rotate(180)" : null)
-      .text(d => d.data.name)
+      .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
+      .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
+      .attr("paint-order", "stroke")
+      .attr("stroke", theme === 'dark' ? '#1B1B1F' : '#ffffff')
       .attr("fill", theme === 'dark' ? '#e2e8f0' : '#1e293b')
-      .attr("font-size", "12px");
+      .text(d => d.data.name);
 
   }, [relationships, theme]);
 
