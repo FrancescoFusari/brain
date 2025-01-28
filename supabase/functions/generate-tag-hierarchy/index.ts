@@ -21,6 +21,14 @@ serve(async (req) => {
     const { tags, userId } = await req.json();
     console.log('Processing tags:', tags);
 
+    if (!tags || !Array.isArray(tags) || tags.length === 0) {
+      throw new Error('No tags provided or invalid tags format');
+    }
+
+    if (!userId) {
+      throw new Error('No user ID provided');
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -32,7 +40,14 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a tag organization expert. Analyze the provided tags and create a hierarchical structure. Return ONLY a JSON array of objects with parent_tag and child_tag properties, nothing else. Example: [{"parent_tag": "technology", "child_tag": "programming"}]'
+            content: `You are a tag organization expert. Analyze the provided tags and create a hierarchical structure.
+            Return ONLY a JSON array of objects with parent_tag and child_tag properties, where parent tags are more general concepts and child tags are more specific.
+            Example format: [{"parent_tag": "technology", "child_tag": "programming"}]
+            Rules:
+            - Each child tag should only appear once
+            - Parent tags should be broader categories
+            - Avoid creating too many parent categories (aim for 3-7)
+            - Parent tags should not be existing tags unless they're truly general categories`
           },
           {
             role: 'user',
@@ -45,25 +60,36 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
+      console.error('OpenAI API error:', response.statusText);
       throw new Error(`OpenAI API error: ${response.statusText}`);
     }
 
     const data = await response.json();
     console.log('OpenAI response:', data);
 
-    const content = data.choices[0].message.content.trim();
-    console.log('Raw content:', content);
-
-    let suggestedRelationships;
-    try {
-      suggestedRelationships = JSON.parse(content);
-    } catch (error) {
-      console.error('Failed to parse OpenAI response directly:', error);
-      throw new Error('Invalid response format from OpenAI');
+    if (!data.choices?.[0]?.message?.content) {
+      console.error('Unexpected OpenAI response format:', data);
+      throw new Error('Unexpected response format from OpenAI');
     }
 
-    if (!Array.isArray(suggestedRelationships)) {
-      throw new Error('OpenAI response is not an array');
+    let relationships;
+    try {
+      const content = data.choices[0].message.content.trim();
+      relationships = JSON.parse(content);
+      
+      if (!Array.isArray(relationships)) {
+        throw new Error('Response is not an array');
+      }
+      
+      relationships.forEach(rel => {
+        if (typeof rel !== 'object' || !rel.parent_tag || !rel.child_tag) {
+          throw new Error('Invalid relationship format');
+        }
+      });
+    } catch (error) {
+      console.error('Failed to parse OpenAI response:', error);
+      console.error('Raw content:', data.choices[0].message.content);
+      throw new Error('Invalid response format from OpenAI');
     }
 
     // Initialize Supabase client
@@ -71,20 +97,34 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Insert the relationships
+    // Clear existing relationships for this user
+    const { error: deleteError } = await supabase
+      .from('tag_relationships')
+      .delete()
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      console.error('Error deleting existing relationships:', deleteError);
+      throw deleteError;
+    }
+
+    // Insert the new relationships
     const { error: insertError } = await supabase
       .from('tag_relationships')
       .insert(
-        suggestedRelationships.map(rel => ({
+        relationships.map(rel => ({
           ...rel,
           user_id: userId,
         }))
       );
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error('Error inserting relationships:', insertError);
+      throw insertError;
+    }
 
     return new Response(
-      JSON.stringify({ success: true, relationships: suggestedRelationships }),
+      JSON.stringify({ success: true, relationships }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
