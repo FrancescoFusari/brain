@@ -63,6 +63,10 @@ export const TagHierarchyDendrogram = ({ relationships }: TagHierarchyDendrogram
       .attr("style", "width: 100%; height: auto; font: 12px sans-serif;");
 
     // Create links
+    const linkGenerator = d3.linkRadial<any, any>()
+      .angle((d: any) => d.x)
+      .radius((d: any) => d.y);
+
     svg.append("g")
       .attr("fill", "none")
       .attr("stroke", theme === 'dark' ? '#475569' : '#94a3b8')
@@ -71,9 +75,7 @@ export const TagHierarchyDendrogram = ({ relationships }: TagHierarchyDendrogram
       .selectAll("path")
       .data(root.links())
       .join("path")
-      .attr("d", d3.linkRadial<d3.HierarchyLink<HierarchyData>>()
-        .angle(d => d.x)
-        .radius(d => d.y));
+      .attr("d", linkGenerator);
 
     // Create nodes
     svg.append("g")
