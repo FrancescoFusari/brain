@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { Tree, Plus } from "lucide-react";
+import { Trees, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TagHierarchyProps {
@@ -90,7 +89,7 @@ export const TagHierarchy = ({ tags }: TagHierarchyProps) => {
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="flex items-center gap-2">
-          <Tree className="h-5 w-5" />
+          <Trees className="h-5 w-5" />
           <h3 className="text-lg font-medium">Tag Hierarchy</h3>
         </div>
         <Button
