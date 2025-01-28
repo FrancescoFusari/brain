@@ -41,26 +41,28 @@ export const TagHierarchyDendrogram = ({ relationships }: TagHierarchyDendrogram
 
     hierarchyData.children = Array.from(parentNodes.values());
 
-    // Setup dimensions
+    // Setup dimensions with more space
     const width = svgRef.current.clientWidth;
     const height = svgRef.current.clientHeight;
     const cx = width * 0.5;
     const cy = height * 0.54;
-    const radius = Math.min(width, height) / 2 - 80;
+    // Increased radius to give more space
+    const radius = Math.min(width, height) / 2 - 120;
 
-    // Create the radial cluster layout
+    // Create the radial cluster layout with increased separation
     const tree = d3.cluster<HierarchyData>()
       .size([2 * Math.PI, radius])
-      .separation((a, b) => (a.parent == b.parent ? 1 : 2) / a.depth);
+      // Increased separation between nodes
+      .separation((a, b) => (a.parent == b.parent ? 1.5 : 3) / a.depth);
 
     // Sort and apply the layout
     const root = tree(d3.hierarchy(hierarchyData)
       .sort((a, b) => d3.ascending(a.data.name, b.data.name)));
 
-    // Create the SVG container
+    // Create the SVG container with more padding
     const svg = d3.select(svgRef.current)
       .attr("viewBox", [-cx, -cy, width, height])
-      .attr("style", "width: 100%; height: auto; font: 12px sans-serif;");
+      .attr("style", "width: 100%; height: auto; font: 13px sans-serif;"); // Increased font size
 
     // Create links
     const linkGenerator = d3.linkRadial<any, any>()
@@ -77,7 +79,7 @@ export const TagHierarchyDendrogram = ({ relationships }: TagHierarchyDendrogram
       .join("path")
       .attr("d", linkGenerator);
 
-    // Create nodes
+    // Create nodes with larger radius
     svg.append("g")
       .selectAll("circle")
       .data(root.descendants())
@@ -86,9 +88,9 @@ export const TagHierarchyDendrogram = ({ relationships }: TagHierarchyDendrogram
       .attr("fill", d => d.children ? 
         (theme === 'dark' ? '#e2e8f0' : '#1e293b') : 
         (theme === 'dark' ? '#94a3b8' : '#475569'))
-      .attr("r", 3);
+      .attr("r", d => d.children ? 4 : 3); // Increased node sizes
 
-    // Add labels
+    // Add labels with more spacing
     svg.append("g")
       .attr("stroke-linejoin", "round")
       .attr("stroke-width", 3)
@@ -101,7 +103,7 @@ export const TagHierarchyDendrogram = ({ relationships }: TagHierarchyDendrogram
         rotate(${d.x >= Math.PI ? 180 : 0})
       `)
       .attr("dy", "0.31em")
-      .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
+      .attr("x", d => d.x < Math.PI === !d.children ? 8 : -8) // Increased text offset
       .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
       .attr("paint-order", "stroke")
       .attr("stroke", theme === 'dark' ? '#1B1B1F' : '#ffffff')
