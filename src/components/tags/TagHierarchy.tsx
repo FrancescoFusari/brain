@@ -3,8 +3,9 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { Trees, Plus } from "lucide-react";
+import { Trees, Plus, Network } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { TagHierarchyDendrogram } from "./TagHierarchyDendrogram";
 
 interface TagHierarchyProps {
   tags: string[];
@@ -20,6 +21,7 @@ interface TagRelationship {
 export const TagHierarchy = ({ tags }: TagHierarchyProps) => {
   const [relationships, setRelationships] = useState<TagRelationship[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showDendrogram, setShowDendrogram] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -93,37 +95,52 @@ export const TagHierarchy = ({ tags }: TagHierarchyProps) => {
           <Trees className="h-5 w-5" />
           <h3 className="text-lg font-medium">Tag Hierarchy</h3>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={generateHierarchy}
-          disabled={isGenerating || tags.length === 0}
-          className="ml-auto"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {isGenerating ? "Generating..." : "Generate Hierarchy"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDendrogram(!showDendrogram)}
+          >
+            <Network className="h-4 w-4 mr-2" />
+            {showDendrogram ? "Show List" : "Show Graph"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={generateHierarchy}
+            disabled={isGenerating || tags.length === 0}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {isGenerating ? "Generating..." : "Generate Hierarchy"}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {relationships.length > 0 && (
-          <div className="space-y-4">
-            {Array.from(new Set(relationships.map(r => r.parent_tag))).map((parent) => (
-              <div key={parent} className="space-y-2">
-                <Badge variant="secondary" className="text-sm">
-                  {parent}
-                </Badge>
-                <div className="flex flex-wrap gap-2 pl-6">
-                  {relationships
-                    .filter(r => r.parent_tag === parent)
-                    .map(r => (
-                      <Badge key={r.id} variant="outline" className="text-sm">
-                        {r.child_tag}
-                      </Badge>
-                    ))}
-                </div>
+          <>
+            {showDendrogram ? (
+              <TagHierarchyDendrogram relationships={relationships} />
+            ) : (
+              <div className="space-y-4">
+                {Array.from(new Set(relationships.map(r => r.parent_tag))).map((parent) => (
+                  <div key={parent} className="space-y-2">
+                    <Badge variant="secondary" className="text-sm">
+                      {parent}
+                    </Badge>
+                    <div className="flex flex-wrap gap-2 pl-6">
+                      {relationships
+                        .filter(r => r.parent_tag === parent)
+                        .map(r => (
+                          <Badge key={r.id} variant="outline" className="text-sm">
+                            {r.child_tag}
+                          </Badge>
+                        ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
