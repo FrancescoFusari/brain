@@ -15,6 +15,7 @@ interface TagRelationship {
   id: string;
   parent_tag: string;
   child_tag: string;
+  user_id: string;
 }
 
 export const TagHierarchy = ({ tags }: TagHierarchyProps) => {
@@ -29,9 +30,16 @@ export const TagHierarchy = ({ tags }: TagHierarchyProps) => {
 
   const fetchRelationships = async () => {
     try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user?.id) {
+        console.error('No authenticated user found');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('tag_relationships')
-        .select('*');
+        .select('*')
+        .eq('user_id', session.session.user.id);
       
       if (error) throw error;
       setRelationships(data);
@@ -49,10 +57,16 @@ export const TagHierarchy = ({ tags }: TagHierarchyProps) => {
     if (!selectedTag || !parentTag) return;
     
     try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user?.id) {
+        throw new Error("No authenticated user found");
+      }
+
       const { error } = await supabase
         .from('tag_relationships')
         .insert([
           {
+            user_id: session.session.user.id,
             parent_tag: parentTag,
             child_tag: selectedTag,
           }
@@ -80,10 +94,19 @@ export const TagHierarchy = ({ tags }: TagHierarchyProps) => {
 
   const removeRelationship = async (parentTag: string, childTag: string) => {
     try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user?.id) {
+        throw new Error("No authenticated user found");
+      }
+
       const { error } = await supabase
         .from('tag_relationships')
         .delete()
-        .match({ parent_tag: parentTag, child_tag: childTag });
+        .match({ 
+          user_id: session.session.user.id,
+          parent_tag: parentTag, 
+          child_tag: childTag 
+        });
 
       if (error) throw error;
 
